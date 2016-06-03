@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.accumulators.base.base_edge_accumulator &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.accumulators.base.base_edge_accumulator</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.accumulators.base.base_edge_accumulator</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="BaseEdgeAccumulator"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.base.BaseEdgeAccumulator">[docs]</a><span></span><span class="k">class</span> <span class="nc">BaseEdgeAccumulator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for all edge accumulators,</span>
+<span class="sd">    i.e. accumulators that compute features from the edge values</span>
+<span class="sd">    between superpixels (not superpixel contents).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: Accumulator type</span>
+    <span class="n">ACCUMULATOR_TYPE</span> <span class="o">=</span> <span class="s1">&#39;edge&#39;</span>
+
+    <span class="c1">#: An id string for this accumulator.</span>
+    <span class="c1">#: Must not contain an underscore (``_``).</span>
+    <span class="c1">#: Must not conflict with any other accumulators of the same type (&#39;edge&#39;).</span>
+    <span class="c1">#: All feature names supported by this accumulator must begin with the prefix ``&lt;id&gt;_edge_``</span>
+    <span class="n">ACCUMULATOR_ID</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+<div class="viewcode-block" id="BaseEdgeAccumulator.__init__"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.base.BaseEdgeAccumulator.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rag:</span>
+<span class="sd">            The rag.</span>
+<span class="sd">        </span>
+<span class="sd">        feature_names</span>
+<span class="sd">            A list of feature names to compute with this accumulator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="BaseEdgeAccumulator.cleanup"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.base.BaseEdgeAccumulator.cleanup">[docs]</a>    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by the Rag to indicate that processing has completed, and</span>
+<span class="sd">        the accumulator should discard all cached data and intermediate results.</span>
+<span class="sd">        Subclasses must reimplement this function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="BaseEdgeAccumulator.supported_features"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.base.BaseEdgeAccumulator.supported_features">[docs]</a>    <span class="k">def</span> <span class="nf">supported_features</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">rag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the list of feature names that can be computed for the given Rag.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="BaseEdgeAccumulator.ingest_edges"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.base.BaseEdgeAccumulator.ingest_edges">[docs]</a>    <span class="k">def</span> <span class="nf">ingest_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">edge_values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ingests the given edge values using the given Rag.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rag</span>
+<span class="sd">            *Rag*</span>
+<span class="sd">            </span>
+<span class="sd">        edge_values</span>
+<span class="sd">            *OrderedDict* of 1D *ndarray*.</span>
+<span class="sd">            Each ndarray ``edge_values[k]`` is in the same order as ``rag.dense_edges[k]``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+    
+<div class="viewcode-block" id="BaseEdgeAccumulator.append_edge_features_to_df"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.base.BaseEdgeAccumulator.append_edge_features_to_df">[docs]</a>    <span class="k">def</span> <span class="nf">append_edge_features_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by the Rag after ``ingest_edges()``.</span>
+
+<span class="sd">        Merges the features of all ingested edges into a final set of edge</span>
+<span class="sd">        feature columns, and appends those columns to the given</span>
+<span class="sd">        ``pandas.DataFrame`` object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+    
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

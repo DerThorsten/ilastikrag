@@ -1,0 +1,488 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.util &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.util</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.util</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">vigra</span>
+
+<div class="viewcode-block" id="contingency_table"><a class="viewcode-back" href="../../util.html#ilastikrag.util.contingency_table">[docs]</a><span class="k">def</span> <span class="nf">contingency_table</span><span class="p">(</span><span class="n">vol1</span><span class="p">,</span> <span class="n">vol2</span><span class="p">,</span> <span class="n">maxlabels</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a 2D array &#39;table&#39; such that ``table[i,j]`` represents</span>
+<span class="sd">    the count of overlapping pixels with value ``i`` in ``vol1``</span>
+<span class="sd">    and value ``j`` in ``vol2``. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">maxlabels</span> <span class="o">=</span> <span class="n">maxlabels</span> <span class="ow">or</span> <span class="p">(</span><span class="n">vol1</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">vol2</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="n">maxlabels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxlabels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="p">)</span>
+    
+    <span class="c1"># np.add.at() will accumulate counts at the given array coordinates</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">at</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="p">[</span><span class="n">vol1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">vol2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)],</span> <span class="mi">1</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">table</span></div>
+
+<div class="viewcode-block" id="label_vol_mapping"><a class="viewcode-back" href="../../util.html#ilastikrag.util.label_vol_mapping">[docs]</a><span class="k">def</span> <span class="nf">label_vol_mapping</span><span class="p">(</span><span class="n">vol_from</span><span class="p">,</span> <span class="n">vol_to</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine how remap voxel IDs in ``vol_from`` into corresponding</span>
+<span class="sd">    IDs in ``vol_to``, according to maxiumum overlap.</span>
+<span class="sd">    (Note that this is not a commutative operation.)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    A 1D index array such that ``mapping[i] = j``, where ``i``</span>
+<span class="sd">    is a voxel ID in ``vol_from``, and ``j`` is the corresponding</span>
+<span class="sd">    ID in ``vol_to``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">contingency_table</span><span class="p">(</span><span class="n">vol_from</span><span class="p">,</span> <span class="n">vol_to</span><span class="p">)</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mapping</span></div>
+
+<div class="viewcode-block" id="edge_mask_for_axis"><a class="viewcode-back" href="../../util.html#ilastikrag.util.edge_mask_for_axis">[docs]</a><span class="k">def</span> <span class="nf">edge_mask_for_axis</span><span class="p">(</span> <span class="n">label_img</span><span class="p">,</span> <span class="n">axis</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find all supervoxel edges along the given axis and return</span>
+<span class="sd">    a &#39;left-hand&#39; mask indicating where the edges are located</span>
+<span class="sd">    (i.e. a boolean array indicating voxels that are just to the left of an edge).</span>
+<span class="sd">    Note that this mask is less wide (by 1 pixel) than ``label_img`` along the chosen axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">+=</span> <span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="k">assert</span> <span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">axis</span>
+    
+    <span class="k">if</span> <span class="n">label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">label_img</span><span class="p">)</span>
+
+    <span class="n">left_slicing</span> <span class="o">=</span> <span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],)</span>
+    <span class="n">right_slicing</span> <span class="o">=</span> <span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[</span><span class="mi">1</span><span class="p">:],)</span>
+
+    <span class="n">edge_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">label_img</span><span class="p">[</span><span class="n">left_slicing</span><span class="p">]</span> <span class="o">!=</span> <span class="n">label_img</span><span class="p">[</span><span class="n">right_slicing</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">edge_mask</span></div>
+
+<div class="viewcode-block" id="edge_ids_for_axis"><a class="viewcode-back" href="../../util.html#ilastikrag.util.edge_ids_for_axis">[docs]</a><span class="k">def</span> <span class="nf">edge_ids_for_axis</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="n">edge_mask</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a &#39;left-hand&#39; edge_mask indicating where edges are located along the given axis,</span>
+<span class="sd">    return an array of of edge ids (u,v) corresonding to the voxel ids of every voxel under the mask,</span>
+<span class="sd">    in the same order as ``edge_mask.nonzero()``.</span>
+<span class="sd">    </span>
+<span class="sd">    The edge ids returned in scan-order (i.e. like ``.nonzero()``), but are *not* sorted such that u &lt; v.</span>
+<span class="sd">    Instead, each edge id (u,v) is ordered from &#39;left&#39; to &#39;right&#39;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    label_img</span>
+<span class="sd">        ndarray</span>
+<span class="sd">    </span>
+<span class="sd">    edge_mask</span>
+<span class="sd">        A &#39;left-hand&#39; mask indicating where the image edges are.</span>
+<span class="sd">        Should be same shape as label_img, except in the dimension of the given axis,</span>
+<span class="sd">        where it is 1 pixel narrower.</span>
+
+<span class="sd">        You may also provide edge_mask=None, which implies that *all* pixel locations</span>
+<span class="sd">        contain an edge along the requested axis.</span>
+<span class="sd">        (Useful if you&#39;re dealing with flat superpixels.)</span>
+<span class="sd">    </span>
+<span class="sd">    axis</span>
+<span class="sd">        An int, &lt; label_img.ndim</span>
+<span class="sd">        Indicates the axis along which edges will be extracted.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ``ndarray`` of ``edge_ids``, ``shape=(N,2)``</span>
+<span class="sd">    To sort each pair, call ``edge_ids.sort(axis=1)``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">+=</span> <span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="k">assert</span> <span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">axis</span>
+
+    <span class="k">if</span> <span class="n">label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">label_img</span><span class="o">.</span><span class="n">dtype</span> <span class="p">)</span>
+
+    <span class="n">left_slicing</span> <span class="o">=</span> <span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],)</span>
+    <span class="n">right_slicing</span> <span class="o">=</span> <span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[</span><span class="mi">1</span><span class="p">:],)</span>
+
+    <span class="k">if</span> <span class="n">edge_mask</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">num_edges</span> <span class="o">=</span> <span class="n">label_img</span><span class="p">[</span><span class="n">left_slicing</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">edge_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_edges</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="p">)</span>
+        <span class="n">edge_ids</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">label_img</span><span class="p">[</span><span class="n">left_slicing</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">edge_ids</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">label_img</span><span class="p">[</span><span class="n">right_slicing</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">num_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">edge_mask</span><span class="p">)</span>
+        <span class="n">edge_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_edges</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="p">)</span>
+        <span class="n">edge_ids</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">label_img</span><span class="p">[</span><span class="n">left_slicing</span><span class="p">][</span><span class="n">edge_mask</span><span class="p">]</span>
+        <span class="n">edge_ids</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">label_img</span><span class="p">[</span><span class="n">right_slicing</span><span class="p">][</span><span class="n">edge_mask</span><span class="p">]</span>
+
+
+    <span class="c1"># Do NOT sort. Edges are returned in left-to-right order.</span>
+    <span class="c1"># edge_ids.sort(axis=1)</span>
+
+    <span class="k">return</span> <span class="n">edge_ids</span></div>
+
+<div class="viewcode-block" id="unique_edge_labels"><a class="viewcode-back" href="../../util.html#ilastikrag.util.unique_edge_labels">[docs]</a><span class="k">def</span> <span class="nf">unique_edge_labels</span><span class="p">(</span> <span class="n">all_edge_ids</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a *list* of ``edge_id`` arrays (each of which has shape ``(N,2)``),</span>
+<span class="sd">    merge all ``edge_id`` arrays into a single ``pandas.DataFrame`` with</span>
+<span class="sd">    columns ``[&#39;sp1&#39;, &#39;sp2&#39;, and &#39;edge_label&#39;]``, where ``edge_label``</span>
+<span class="sd">    is a unique ID number for each ``edge_id`` pair.</span>
+<span class="sd">    (The DataFrame will have no duplicate entries.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">edge_ids</span> <span class="ow">in</span> <span class="n">all_edge_ids</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">edge_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="n">num_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">edge_ids</span><span class="p">)</span>
+        <span class="n">index_u32</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_edges</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">edge_ids</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">index_u32</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">all_dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">df</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_dfs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">combined_df</span> <span class="o">=</span> <span class="n">all_dfs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">combined_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">all_dfs</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span>
+        <span class="n">combined_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># This sort isn&#39;t necessary for most use-cases,</span>
+    <span class="c1"># but it&#39;s convenient for debugging.</span>
+    <span class="n">combined_df</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># TODO: Instead of adding a new column here, we might save some RAM </span>
+    <span class="c1">#       if we re-index and then add the index as a column</span>
+    <span class="n">combined_df</span><span class="p">[</span><span class="s1">&#39;edge_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">combined_df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">combined_df</span></div>
+
+<div class="viewcode-block" id="extract_edge_values_for_axis"><a class="viewcode-back" href="../../util.html#ilastikrag.util.extract_edge_values_for_axis">[docs]</a><span class="k">def</span> <span class="nf">extract_edge_values_for_axis</span><span class="p">(</span> <span class="n">axis</span><span class="p">,</span> <span class="n">edge_mask</span><span class="p">,</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">aspandas</span><span class="o">=</span><span class="bp">False</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns 1D ``ndarray``, in the same order as ``edge_mask.nonzero()``.</span>
+<span class="sd">    Result is ``float32``, regardless of ``value_img.dtype``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">left_slicing</span> <span class="o">=</span> <span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],)</span>
+    <span class="n">right_slicing</span> <span class="o">=</span> <span class="p">((</span><span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">),)</span> <span class="o">*</span> <span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[</span><span class="mi">1</span><span class="p">:],)</span>
+
+    <span class="c1"># Here, we extract the voxel values *first* and then compute features on the 1D list of values (with associated labels)</span>
+    <span class="c1"># This saves RAM (and should therefore be fast), but can&#39;t be used with coordinate-based features or shape features.</span>
+    <span class="c1"># We could, instead, change the lines below to not extract the mask values, and pass the full image into vigra...</span>
+    <span class="n">edge_values_left</span> <span class="o">=</span> <span class="n">value_img</span><span class="p">[</span><span class="n">left_slicing</span><span class="p">][</span><span class="n">edge_mask</span><span class="p">]</span>
+    <span class="n">edge_values_right</span> <span class="o">=</span> <span class="n">value_img</span><span class="p">[</span><span class="n">right_slicing</span><span class="p">][</span><span class="n">edge_mask</span><span class="p">]</span>
+
+    <span class="c1"># Vigra region features require float32    </span>
+    <span class="n">edge_values_left</span> <span class="o">=</span> <span class="n">edge_values_left</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">edge_values_right</span> <span class="o">=</span> <span class="n">edge_values_right</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c1"># We average the left and right-hand voxel values &#39;manually&#39; here and just compute features on the average</span>
+    <span class="c1"># In theory, we could compute the full set of features separately for left and right-hand voxel sets and </span>
+    <span class="c1"># then merge the two, but that seems like overkill, and only some features would be slightly different (e.g. histogram features)</span>
+    <span class="n">edge_values</span> <span class="o">=</span> <span class="n">edge_values_left</span>
+    <span class="n">edge_values</span> <span class="o">+=</span> <span class="n">edge_values_right</span>
+    <span class="n">edge_values</span> <span class="o">/=</span> <span class="mi">2</span>
+    
+    <span class="k">if</span> <span class="n">aspandas</span><span class="p">:</span>
+        <span class="c1"># If you add a float32 array to a pd.DataFrame, it is automatically casted to float64!</span>
+        <span class="c1"># But if you add it as a Series, the dtype is untouched.</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span> <span class="n">edge_values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">edge_values</span></div>
+
+<div class="viewcode-block" id="get_edge_ids"><a class="viewcode-back" href="../../util.html#ilastikrag.util.get_edge_ids">[docs]</a><span class="k">def</span> <span class="nf">get_edge_ids</span><span class="p">(</span> <span class="n">label_img</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convenience function.</span>
+<span class="sd">    Returns a DataFrame with columns ``[&#39;sp1&#39;, &#39;sp2&#39;, &#39;edge_label&#39;]``, sorted by ``(&#39;sp1&#39;, &#39;sp2&#39;)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_edge_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+        <span class="n">edge_mask</span> <span class="o">=</span> <span class="n">edge_mask_for_axis</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="n">edge_ids</span> <span class="o">=</span> <span class="n">edge_ids_for_axis</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="n">edge_mask</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="n">edge_ids</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">lookup</span> <span class="o">=</span> <span class="n">unique_edge_labels</span><span class="p">(</span> <span class="p">[</span><span class="n">edge_ids</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">all_edge_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lookup</span><span class="p">[[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">final_edge_label_lookup_df</span> <span class="o">=</span> <span class="n">unique_edge_labels</span><span class="p">(</span> <span class="n">all_edge_ids</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">final_edge_label_lookup_df</span></div>
+
+<div class="viewcode-block" id="nonzero_coord_array"><a class="viewcode-back" href="../../util.html#ilastikrag.util.nonzero_coord_array">[docs]</a><span class="k">def</span> <span class="nf">nonzero_coord_array</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Equivalent to ``np.transpose(a.nonzero())``, but much</span>
+<span class="sd">    faster for large arrays, thanks to a little trick:</span>
+<span class="sd">    </span>
+<span class="sd">    The elements of the tuple returned by ``a.nonzero()`` share a common ``base``,</span>
+<span class="sd">    so we can avoid the copy that would normally be incurred when</span>
+<span class="sd">    calling ``transpose()`` on the tuple.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">base_array</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">base</span>
+    
+    <span class="c1"># This is necessary because VigraArrays have their own version</span>
+    <span class="c1"># of nonzero(), which adds an extra base in the view chain.</span>
+    <span class="k">while</span> <span class="n">base_array</span><span class="o">.</span><span class="n">base</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">base_array</span> <span class="o">=</span> <span class="n">base_array</span><span class="o">.</span><span class="n">base</span>
+    <span class="k">return</span> <span class="n">base_array</span></div>
+    
+<div class="viewcode-block" id="generate_random_voronoi"><a class="viewcode-back" href="../../util.html#ilastikrag.util.generate_random_voronoi">[docs]</a><span class="k">def</span> <span class="nf">generate_random_voronoi</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">num_sp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a superpixel image for testing.</span>
+<span class="sd">    A set of N seed points (N=``num_sp``) will be chosen randomly, and the superpixels</span>
+<span class="sd">    will just be a voronoi diagram for those seeds.</span>
+<span class="sd">    Note: The first superpixel ID is 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;Only 2D and 3D supported.&quot;</span>
+    
+    <span class="n">seed_coords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">:</span>
+        <span class="c1"># Generate more than we need, so we can toss duplicates</span>
+        <span class="n">seed_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span> <span class="n">dim</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">num_sp</span><span class="p">,)</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="n">seed_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">seed_coords</span><span class="p">)</span>
+    <span class="n">seed_coords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">)))</span> <span class="c1"># toss duplicates</span>
+    <span class="n">seed_coords</span> <span class="o">=</span> <span class="n">seed_coords</span><span class="p">[:</span><span class="n">num_sp</span><span class="p">]</span>
+    <span class="n">seed_coords</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">seed_coords</span><span class="p">))</span>
+
+    <span class="n">superpixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="p">)</span>
+    <span class="n">superpixels</span><span class="p">[</span><span class="n">seed_coords</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span> <span class="n">num_sp</span> <span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    
+    <span class="n">vigra</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">watersheds</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                               <span class="n">seeds</span><span class="o">=</span><span class="n">superpixels</span><span class="p">,</span>
+                               <span class="n">out</span><span class="o">=</span><span class="n">superpixels</span> <span class="p">)</span>
+    <span class="n">superpixels</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span><span class="n">superpixels</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">[</span><span class="mi">3</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">):])</span>        
+    <span class="k">return</span> <span class="n">superpixels</span></div>
+
+<span class="k">def</span> <span class="nf">colorize_labels</span><span class="p">(</span><span class="n">label_img</span><span class="p">):</span>
+    <span class="n">label_img</span> <span class="o">=</span> <span class="n">label_img</span><span class="o">.</span><span class="n">withAxes</span><span class="p">(</span><span class="s1">&#39;yx&#39;</span><span class="p">)</span>
+    <span class="n">random_colors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">colorized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">colorized</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span><span class="n">colorized</span><span class="p">,</span> <span class="s1">&#39;yxc&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">colorized</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_colors</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">c</span><span class="p">][</span><span class="n">label_img</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">colorized</span>
+
+<div class="viewcode-block" id="dataframe_to_hdf5"><a class="viewcode-back" href="../../util.html#ilastikrag.util.dataframe_to_hdf5">[docs]</a><span class="k">def</span> <span class="nf">dataframe_to_hdf5</span><span class="p">(</span><span class="n">h5py_group</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function to serialize a pandas.DataFrame to an h5py.Group.</span>
+
+<span class="sd">    Note: This function uses a custom storage format,</span>
+<span class="sd">          not the same format as pandas.DataFrame.to_hdf().</span>
+
+<span class="sd">    Known to work for the DataFrames used in the Rag datastructure,</span>
+<span class="sd">    including the MultiIndex columns in the dense_edge_tables.</span>
+<span class="sd">    Not tested with more complicated DataFrame structures. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;row_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;column_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">columns_group</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;columns&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+        <span class="n">columns_group</span><span class="p">[</span><span class="s1">&#39;{:03}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col_index</span><span class="p">)]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span></div>
+
+<div class="viewcode-block" id="dataframe_from_hdf5"><a class="viewcode-back" href="../../util.html#ilastikrag.util.dataframe_from_hdf5">[docs]</a><span class="k">def</span> <span class="nf">dataframe_from_hdf5</span><span class="p">(</span><span class="n">h5py_group</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function to deserialize a pandas.DataFrame from an h5py.Group,</span>
+<span class="sd">    as written by ``dataframe_to_hdf5()``.</span>
+
+<span class="sd">    Note: This function uses a custom storage format,</span>
+<span class="sd">          not the same format as pandas.read_hdf().</span>
+
+<span class="sd">    Known to work for the DataFrames used in the Rag datastructure,</span>
+<span class="sd">    including the MultiIndex columns in the dense_edge_tables.</span>
+<span class="sd">    Not tested with more complicated DataFrame structures. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">array</span> <span class="c1"># We use eval() for the column index, which uses &#39;array&#39;</span>
+    <span class="n">array</span> <span class="c1"># Avoid linter usage errors</span>
+    <span class="n">row_index_values</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;row_index&#39;</span><span class="p">][:]</span>
+    <span class="n">column_index_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;column_index&#39;</span><span class="p">][()]))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">column_index_names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">column_index_names</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">column_index_names</span><span class="p">)</span>
+        <span class="n">column_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">column_index_names</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">column_index_names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">column_index</span> <span class="o">=</span> <span class="n">column_index_names</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;I don&#39;t know how to handle that type of column index.: {}&quot;</span>
+                                  <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;column_index&#39;</span><span class="p">][()]))</span>
+
+    <span class="n">columns_group</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">]</span>
+    <span class="n">col_values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_name</span><span class="p">,</span> <span class="n">col_values_dset</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">columns_group</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">col_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">col_values_dset</span><span class="p">[:]</span> <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span> <span class="n">index</span><span class="o">=</span><span class="n">row_index_values</span><span class="p">,</span>
+                         <span class="n">columns</span><span class="o">=</span><span class="n">column_index</span><span class="p">,</span>
+                         <span class="n">data</span><span class="o">=</span><span class="p">{</span> <span class="n">name</span><span class="p">:</span> <span class="n">values</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span><span class="n">values</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">column_index_names</span><span class="p">,</span> <span class="n">col_values</span><span class="p">)</span> <span class="p">}</span> <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

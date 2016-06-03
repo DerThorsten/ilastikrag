@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.accumulators.standard.standard_edge_accumulator &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.accumulators.standard.standard_edge_accumulator</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.accumulators.standard.standard_edge_accumulator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">vigra</span>
+
+<span class="kn">from</span> <span class="nn">ilastikrag.accumulators</span> <span class="kn">import</span> <span class="n">BaseEdgeAccumulator</span>
+<span class="kn">from</span> <span class="nn">.vigra_util</span> <span class="kn">import</span> <span class="n">get_vigra_feature_names</span><span class="p">,</span> <span class="n">append_vigra_features_to_dataframe</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StandardEdgeAccumulator"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.standard.StandardEdgeAccumulator">[docs]</a><span class="k">class</span> <span class="nc">StandardEdgeAccumulator</span><span class="p">(</span><span class="n">BaseEdgeAccumulator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Accumulator for features of the edge pixels (only) between superpixels.</span>
+<span class="sd">    Uses vigra&#39;s RegionFeatureAccumulator library to compute the features.</span>
+<span class="sd">    </span>
+<span class="sd">    Supported feature names:</span>
+<span class="sd">    </span>
+<span class="sd">        - standard_edge_count</span>
+<span class="sd">        - standard_edge_sum</span>
+<span class="sd">        - standard_edge_minimum</span>
+<span class="sd">        - standard_edge_maximum</span>
+<span class="sd">        - standard_edge_mean</span>
+<span class="sd">        - standard_edge_variance</span>
+<span class="sd">        - standard_edge_kurtosis</span>
+<span class="sd">        - standard_edge_skewness</span>
+
+<span class="sd">    ..</span>
+
+<span class="sd">        - standard_edge_quantiles (short for &quot;all edge quantiles&quot;)</span>
+<span class="sd">        - standard_edge_quantiles_0</span>
+<span class="sd">        - standard_edge_quantiles_10</span>
+<span class="sd">        - standard_edge_quantiles_25</span>
+<span class="sd">        - standard_edge_quantiles_50</span>
+<span class="sd">        - standard_edge_quantiles_75</span>
+<span class="sd">        - standard_edge_quantiles_90</span>
+<span class="sd">        - standard_edge_quantiles_100</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="c1">#     TODO</span>
+<span class="c1">#     ----    </span>
+<span class="c1">#     - edge_count is computed &#39;manhattan&#39; style, meaning that it</span>
+<span class="c1">#       is sensitive to the edge orientation (and so is edge_sum).</span>
+<span class="c1">#       Should we try to compensate for that somehow?</span>
+
+    
+    <span class="n">ACCUMULATOR_ID</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span>
+    <span class="n">ACCUMULATOR_TYPE</span> <span class="o">=</span> <span class="s1">&#39;edge&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span> <span class="c1"># Initialize members</span>
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span>
+
+        <span class="c1"># &#39;standard_edge_quantiles&#39; is shorthand for &quot;all quantiles&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;standard_edge_quantiles&#39;</span> <span class="ow">in</span> <span class="n">feature_names</span><span class="p">:</span>
+            <span class="n">feature_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;standard_edge_quantiles&#39;</span><span class="p">)</span>
+
+            <span class="n">feature_names</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;standard_edge_quantiles_0&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_edge_quantiles_10&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_edge_quantiles_25&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_edge_quantiles_50&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_edge_quantiles_75&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_edge_quantiles_90&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_edge_quantiles_100&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature_names</span> <span class="o">=</span> <span class="n">feature_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vigra_feature_names</span> <span class="o">=</span> <span class="n">get_vigra_feature_names</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vigra_acc</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">ingest_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">edge_values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a vigra RegionFeaturesAccumulator with the results of all features,</span>
+<span class="sd">        computed over the edge pixels of the given value_img.</span>
+
+<span class="sd">        The accumulator&#39;s &#39;region&#39; indexes will correspond to the &#39;edge_label&#39;</span>
+<span class="sd">        column from the given DataFrames.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">edge_values</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vigra_feature_names</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">],</span> \
+                <span class="s2">&quot;Can&#39;t compute edge features without a value image (except for standard_edge_count)&quot;</span>
+
+        <span class="c1"># Compute histogram_range across all axes (if quantiles are needed)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;quantiles&#39;</span><span class="p">,</span> <span class="s1">&#39;histogram&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vigra_feature_names</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Computing global histogram range...&quot;</span><span class="p">)</span>
+            <span class="n">histogram_range</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">,</span> <span class="n">edge_values</span><span class="o">.</span><span class="n">values</span><span class="p">())),</span>
+                               <span class="nb">max</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">,</span> <span class="n">edge_values</span><span class="o">.</span><span class="n">values</span><span class="p">()))]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">histogram_range</span> <span class="o">=</span> <span class="s2">&quot;globalminmax&quot;</span>
+
+        <span class="n">axial_accumulators</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">axiskey</span><span class="p">,</span> <span class="n">dense_edge_table</span> <span class="ow">in</span> <span class="n">rag</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Axis {}: Computing region features...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">axiskey</span> <span class="p">))</span>
+            
+            <span class="n">edge_labels</span> <span class="o">=</span> <span class="n">dense_edge_table</span><span class="p">[</span><span class="s1">&#39;edge_label&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="k">if</span> <span class="n">edge_values</span><span class="p">:</span>            
+                <span class="n">edge_values_thisaxis</span> <span class="o">=</span> <span class="n">edge_values</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Vigra wants a value image, even though we won&#39;t be using it.</span>
+                <span class="c1"># We&#39;ll give it some garbage:</span>
+                <span class="c1"># Just cast the labels as if they were float.</span>
+                <span class="n">edge_values_thisaxis</span> <span class="o">=</span> <span class="n">edge_labels</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        
+            <span class="c1"># Must add an extra singleton axis here because vigra doesn&#39;t support 1D data</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">extractRegionFeatures</span><span class="p">(</span> <span class="n">edge_values_thisaxis</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">),</span>
+                                                        <span class="n">edge_labels</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">),</span>
+                                                        <span class="n">features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_vigra_feature_names</span><span class="p">,</span>
+                                                        <span class="n">histogramRange</span><span class="o">=</span><span class="n">histogram_range</span> <span class="p">)</span>
+            <span class="n">axial_accumulators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+
+        <span class="n">final_acc</span> <span class="o">=</span> <span class="n">axial_accumulators</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">createAccumulator</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">acc</span> <span class="ow">in</span> <span class="n">axial_accumulators</span><span class="p">:</span>
+            <span class="c1"># This is an identity lookup, but it&#39;s necessary since vigra will complain </span>
+            <span class="c1"># about different maxIds if we call merge() without a lookup </span>
+            <span class="n">axis_to_final_index_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span> <span class="n">acc</span><span class="o">.</span><span class="n">maxRegionLabel</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span> <span class="p">)</span>
+            <span class="n">final_acc</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span> <span class="n">acc</span><span class="p">,</span> <span class="n">axis_to_final_index_array</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vigra_acc</span> <span class="o">=</span> <span class="n">final_acc</span>
+
+    <span class="k">def</span> <span class="nf">append_edge_features_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">):</span>
+        <span class="c1"># Add the vigra accumulator results to the dataframe</span>
+        <span class="k">return</span> <span class="n">append_vigra_features_to_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vigra_acc</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_names</span><span class="p">,</span> <span class="n">overwrite_quantile_minmax</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">supported_features</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">rag</span><span class="p">):</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;standard_edge_count&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_sum&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_minimum&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_maximum&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_mean&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_variance&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_kurtosis&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_skewness&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_0&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_10&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_25&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_50&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_75&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_90&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles_100&#39;</span> <span class="p">]</span>
+        <span class="k">return</span> <span class="n">names</span></div>
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

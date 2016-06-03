@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.accumulators.edgeregion.edgeregion_edge_accumulator &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.accumulators.edgeregion.edgeregion_edge_accumulator</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.accumulators.edgeregion.edgeregion_edge_accumulator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">ilastikrag.accumulators</span> <span class="kn">import</span> <span class="n">BaseEdgeAccumulator</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EdgeRegionEdgeAccumulator"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.edgeregion.EdgeRegionEdgeAccumulator">[docs]</a><span class="k">class</span> <span class="nc">EdgeRegionEdgeAccumulator</span><span class="p">(</span><span class="n">BaseEdgeAccumulator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Accumulator for computing region axes and region radii over edge coordinates.</span>
+<span class="sd">    (The :py:class:`~ilastikrag.accumulators.standard.StandardEdgeAccumulator`</span>
+<span class="sd">    class does not provide region features.)</span>
+<span class="sd">    </span>
+<span class="sd">    We don&#39;t use vigra&#39;s RegionFeatureAccumulators because we only have</span>
+<span class="sd">    access to the sparse lists of edge pixels (along each axis).</span>
+<span class="sd">    Instead, we manually compute the region axes/radii directly from the</span>
+<span class="sd">    edge coordinate columns.</span>
+<span class="sd">    </span>
+<span class="sd">    Supported feature names:</span>
+
+<span class="sd">        - edgeregion_edge_area (radii_0 * radii_1)</span>
+<span class="sd">        - edgeregion_edge_volume (radii_0 * radii_1 * radii_2)</span>
+
+<span class="sd">    ..</span>
+<span class="sd">    </span>
+<span class="sd">        - edgeregion_edge_regionradii (all of the below)</span>
+<span class="sd">        - edgeregion_edge_regionradii_0</span>
+<span class="sd">        - edgeregion_edge_regionradii_1</span>
+<span class="sd">        - edgeregion_edge_regionradii_2</span>
+
+<span class="sd">    ..</span>
+
+<span class="sd">        - edgeregion_edge_regionaxes (all of the below)</span>
+<span class="sd">        - edgeregion_edge_regionaxes_0x</span>
+<span class="sd">        - edgeregion_edge_regionaxes_0y</span>
+<span class="sd">        - edgeregion_edge_regionaxes_0z</span>
+<span class="sd">        - edgeregion_edge_regionaxes_1x</span>
+<span class="sd">        - edgeregion_edge_regionaxes_1y</span>
+<span class="sd">        - edgeregion_edge_regionaxes_1z</span>
+<span class="sd">        - edgeregion_edge_regionaxes_2x</span>
+<span class="sd">        - edgeregion_edge_regionaxes_2y</span>
+<span class="sd">        - edgeregion_edge_regionaxes_2z</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ACCUMULATOR_ID</span> <span class="o">=</span> <span class="s1">&#39;edgeregion&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span> <span class="c1"># Initialize members</span>
+        
+        <span class="n">label_img</span> <span class="o">=</span> <span class="n">rag</span><span class="o">.</span><span class="n">label_img</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dense_axiskeys</span> <span class="o">=</span> <span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rag</span><span class="o">.</span><span class="n">flat_superpixels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dense_axiskeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">]</span>
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span>
+
+        <span class="c1"># &#39;edgeregion_edge_regionradii&#39; is shorthand for &quot;all edge region radii&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;edgeregion_edge_regionradii&#39;</span> <span class="ow">in</span> <span class="n">feature_names</span><span class="p">:</span>
+            <span class="n">feature_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;edgeregion_edge_regionradii&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">component_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+                <span class="n">feature_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="s1">&#39;edgeregion_edge_regionradii_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">component_index</span> <span class="p">)</span> <span class="p">)</span>            
+        
+        <span class="c1"># &#39;edgeregion_edge_regionaxes&#39; is shorthand for &quot;all edge region axes&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;edgeregion_edge_regionaxes&#39;</span> <span class="ow">in</span> <span class="n">feature_names</span><span class="p">:</span>
+            <span class="n">feature_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;edgeregion_edge_regionaxes&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">component_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">axisname</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span> <span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="s1">&#39;xyz&#39;</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="nb">range</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span> <span class="p">):</span>
+                    <span class="n">feature_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="s1">&#39;edgeregion_edge_regionaxes_{}{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">component_index</span><span class="p">,</span> <span class="n">axisname</span> <span class="p">)</span> <span class="p">)</span>            
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature_names</span> <span class="o">=</span> <span class="n">feature_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rag</span> <span class="o">=</span> <span class="n">rag</span>
+    
+    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">ingest_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">edge_values</span><span class="p">):</span>
+        <span class="c1"># This class computes only unweighted region</span>
+        <span class="c1"># features, so edge_values is not used below.</span>
+        
+        <span class="c1"># Concatenate edges from all axes into one big DataFrame</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">table</span><span class="p">[[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dense_axiskeys</span><span class="p">]</span> <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">rag</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">coords_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="c1"># Create a new DataFrame to store the results</span>
+        <span class="n">dense_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rag</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">final_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rag</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="p">[</span><span class="n">dense_axes</span><span class="p">][[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]])</span>
+        
+        <span class="n">num_edges</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_df</span><span class="p">)</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dense_axiskeys</span><span class="p">)</span>
+        <span class="n">covariance_matrices_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="n">num_edges</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">ndim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="p">)</span>
+
+        <span class="n">group_index</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">def</span> <span class="nf">write_covariance_matrix</span><span class="p">(</span><span class="n">group_df</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Computes the covariance matrix of the given group,</span>
+<span class="sd">            and writes it into the pre-existing covariance_matrices_array.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="c1"># There&#39;s one &#39;gotcha&#39; to watch out for here:</span>
+            <span class="c1"># GroupBy.apply() calls this function *twice* for the first group.</span>
+            <span class="c1"># http://pandas.pydata.org/pandas-docs/stable/generated/pandas.core.groupby.GroupBy.apply.html</span>
+            <span class="k">if</span> <span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="bp">None</span>
+            
+            <span class="c1"># Compute covariance.</span>
+            <span class="c1"># Apparently computing it manually is much faster than group_df.cov()</span>
+            <span class="n">group_vals</span> <span class="o">=</span> <span class="n">group_df</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">group_vals</span> <span class="o">-=</span> <span class="n">group_vals</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">matrix</span> <span class="o">=</span> <span class="n">group_vals</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">group_vals</span><span class="p">)</span>
+            <span class="n">matrix</span><span class="p">[:]</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_df</span><span class="p">)</span>
+            
+            <span class="c1"># Store.</span>
+            <span class="n">covariance_matrices_array</span><span class="p">[</span><span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">matrix</span>
+            <span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="c1"># We don&#39;t need to return anything;</span>
+            <span class="c1"># we&#39;re using this function only for its side effects.</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="c1"># Compute/store covariance matrices</span>
+        <span class="n">grouper</span> <span class="o">=</span> <span class="n">coords_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">grouper</span> <span class="o">=</span> <span class="n">grouper</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dense_axiskeys</span><span class="p">)]</span>
+        <span class="n">grouper</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">write_covariance_matrix</span><span class="p">)</span> <span class="c1"># Used for its side-effects only</span>
+
+        <span class="c1"># Eigensystems</span>
+        <span class="n">eigenvalues</span><span class="p">,</span> <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">covariance_matrices_array</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">eigenvalues</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_edges</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">eigenvectors</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_edges</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">ndim</span><span class="p">)</span>
+
+        <span class="c1"># eigh() returns in *ascending* order, but we want descending</span>
+        <span class="n">eigenvalues</span> <span class="o">=</span> <span class="n">eigenvalues</span><span class="p">[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">eigenvectors</span><span class="p">[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="c1"># eigh() returns eigenvectors in *columns*, but we want rows</span>
+        <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">eigenvectors</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>        
+
+        <span class="c1"># Apparently eigh() can return tiny negative eigenvalues sometimes</span>
+        <span class="n">eigenvalues</span><span class="p">[</span><span class="n">eigenvalues</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">eigenvalues</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">eigenvalues</span><span class="p">)</span>
+
+        <span class="c1"># Copy axes into final_df, in the same order the user asked for.</span>
+        <span class="k">for</span> <span class="n">feature_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">feature_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;edgeregion_edge_regionradii&#39;</span><span class="p">):</span>
+                <span class="n">region_axis_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">feature_name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">final_df</span><span class="p">[</span><span class="n">feature_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">radii</span><span class="p">[:,</span> <span class="n">region_axis_index</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">feature_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;edgeregion_edge_regionaxes&#39;</span><span class="p">):</span>
+                <span class="n">region_axis_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">feature_name</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">coord_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dense_axiskeys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">feature_name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">final_df</span><span class="p">[</span><span class="n">feature_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eigenvectors</span><span class="p">[:,</span> <span class="n">region_axis_index</span><span class="p">,</span> <span class="n">coord_index</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">feature_name</span> <span class="o">==</span> <span class="s1">&#39;edgeregion_edge_area&#39;</span><span class="p">:</span>
+                <span class="n">final_df</span><span class="p">[</span><span class="n">feature_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">radii</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">feature_name</span> <span class="o">==</span> <span class="s1">&#39;edgeregion_edge_volume&#39;</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">radii</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t ask for edge volume with 2D images.&quot;</span>
+                <span class="n">final_df</span><span class="p">[</span><span class="n">feature_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="bp">False</span><span class="p">,</span> <span class="s2">&quot;Unknown feature: &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">feature_name</span> <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span> <span class="o">=</span> <span class="n">final_df</span>
+    
+    <span class="k">def</span> <span class="nf">append_edge_features_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">edge_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">supported_features</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">rag</span><span class="p">):</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;edgeregion_edge_area&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">rag</span><span class="o">.</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;edgeregion_edge_volume&#39;</span><span class="p">]</span>
+
+        <span class="n">names</span> <span class="o">+=</span> <span class="p">[</span> <span class="s1">&#39;edgeregion_edge_regionradii&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;edgeregion_edge_regionradii_0&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;edgeregion_edge_regionradii_1&#39;</span> <span class="p">]</span>
+            
+        <span class="k">if</span> <span class="n">rag</span><span class="o">.</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;edgeregion_edge_regionradii_2&#39;</span><span class="p">]</span>
+
+        <span class="n">axes_names</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;edgeregion_edge_regionaxes&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;edgeregion_edge_regionaxes_0x&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;edgeregion_edge_regionaxes_0y&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;edgeregion_edge_regionaxes_1x&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;edgeregion_edge_regionaxes_1y&#39;</span> <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">rag</span><span class="o">.</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">axes_names</span> <span class="o">+=</span> <span class="p">[</span> <span class="s1">&#39;edgeregion_edge_regionaxes_0z&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;edgeregion_edge_regionaxes_1z&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;edgeregion_edge_regionaxes_2x&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;edgeregion_edge_regionaxes_2y&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;edgeregion_edge_regionaxes_2z&#39;</span> <span class="p">]</span>
+            <span class="n">axes_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">axes_names</span><span class="p">)</span>
+
+        <span class="n">names</span> <span class="o">+=</span> <span class="n">axes_names</span>
+        <span class="k">return</span> <span class="n">names</span> </div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

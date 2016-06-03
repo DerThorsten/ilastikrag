@@ -1,0 +1,632 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Rag &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="index.html"/>
+        <link rel="next" title="Feature Accumulators" href="accumulators.html"/>
+        <link rel="prev" title="Tutorials" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Rag</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/rag.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="rag">
+<span id="id1"></span><h1>Rag<a class="headerlink" href="#rag" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="#ilastikrag.rag.Rag" title="ilastikrag.rag.Rag"><code class="xref py py-class docutils literal"><span class="pre">Rag</span></code></a><ul>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.__init__" title="ilastikrag.rag.Rag.__init__"><code class="xref py py-meth docutils literal"><span class="pre">__init__</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.supported_features" title="ilastikrag.rag.Rag.supported_features"><code class="xref py py-meth docutils literal"><span class="pre">supported_features</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.compute_features" title="ilastikrag.rag.Rag.compute_features"><code class="xref py py-meth docutils literal"><span class="pre">compute_features</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.edge_decisions_from_groundtruth" title="ilastikrag.rag.Rag.edge_decisions_from_groundtruth"><code class="xref py py-meth docutils literal"><span class="pre">edge_decisions_from_groundtruth</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.naive_segmentation_from_edge_decisions" title="ilastikrag.rag.Rag.naive_segmentation_from_edge_decisions"><code class="xref py py-meth docutils literal"><span class="pre">naive_segmentation_from_edge_decisions</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.serialize_hdf5" title="ilastikrag.rag.Rag.serialize_hdf5"><code class="xref py py-meth docutils literal"><span class="pre">serialize_hdf5</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.deserialize_hdf5" title="ilastikrag.rag.Rag.deserialize_hdf5"><code class="xref py py-meth docutils literal"><span class="pre">deserialize_hdf5</span></code></a></li>
+<li><a class="reference internal" href="#ilastikrag.rag.Rag.dense_edge_tables" title="ilastikrag.rag.Rag.dense_edge_tables"><code class="xref py py-meth docutils literal"><span class="pre">dense_edge_tables</span></code></a></li>
+</ul>
+</li>
+</ul>
+<dl class="class">
+<dt id="ilastikrag.rag.Rag">
+<em class="property">class </em><code class="descclassname">ilastikrag.rag.</code><code class="descname">Rag</code><span class="sig-paren">(</span><em>label_img</em>, <em>flat_superpixels=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Region Adjacency Graph</p>
+<p>Initialized with an ND label image of superpixels, and stores
+the edges between superpixels.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="78%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Attribute</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>label_img</td>
+<td>The label volume you passed in.</td>
+</tr>
+<tr class="row-odd"><td>sp_ids</td>
+<td>1D ndarray of superpixel ID values, sorted.</td>
+</tr>
+<tr class="row-even"><td>max_sp</td>
+<td>The maximum superpixel ID in the label volume</td>
+</tr>
+<tr class="row-odd"><td>num_sp</td>
+<td>The number of superpixels in <code class="docutils literal"><span class="pre">label_img</span></code>.                            <br />
+Not necessarily the same as <code class="docutils literal"><span class="pre">max_sp</span></code>.                                <br /></td>
+</tr>
+<tr class="row-even"><td>num_edges</td>
+<td>The number of edges in the label volume.</td>
+</tr>
+<tr class="row-odd"><td>edge_ids</td>
+<td><em>ndarray, shape=(N,2)</em>                                                 <br />
+List of adjacent superpixel IDs, sorted. (No duplicates).              <br />
+<em>Guarantee:</em> For all edge_ids (sp1,sp2): sp1 &lt; sp2.                    <br /></td>
+</tr>
+<tr class="row-even"><td>unique_edge_tables</td>
+<td><em>dict</em> of <em>pandas.DataFrame</em> objects                                   <br />
+Columns: <code class="docutils literal"><span class="pre">[sp1,</span> <span class="pre">sp2,</span> <span class="pre">edge_label]</span></code>, where <code class="docutils literal"><span class="pre">edge_label</span></code>              <br />
+uniquely identifies each edge <code class="docutils literal"><span class="pre">(sp1,</span> <span class="pre">sp2)</span></code> within that table.        <br />
+See <code class="xref py py-attr docutils literal"><span class="pre">unique_edge_tables</span></code> for details.                         <br /></td>
+</tr>
+<tr class="row-odd"><td>dense_edge_tables</td>
+<td><em>OrderedDict</em> of <em>pandas.DataFrame</em> objects (one per isotropic axis).  <br />
+Each DataFrame stores the id and location of all pixel                 <br />
+edge pairs in the volume <em>along a particular axis.</em>                    <br />
+See <a class="reference internal" href="#ilastikrag.rag.Rag.dense_edge_tables" title="ilastikrag.rag.Rag.dense_edge_tables"><code class="xref py py-attr docutils literal"><span class="pre">dense_edge_tables</span></code></a> for details.                          <br /></td>
+</tr>
+<tr class="row-even"><td>flat_edge_label_img</td>
+<td><em>ndarray, same shape as label_img except for the z-axis (1 px smaller)</em> <br />
+If <code class="docutils literal"><span class="pre">flat_superpixels=True</span></code>, this is a label volume for edges along    <br />
+the z-axis, labeled according to the <code class="docutils literal"><span class="pre">edge_label</span></code> column from         <br />
+<code class="xref py py-attr docutils literal"><span class="pre">unique_edge_tables['z']</span></code>.                <br /></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Limitations:</strong></p>
+<ul class="simple">
+<li>This representation does not check for edge contiguity, so if two
+superpixels are connected via multiple &#8216;faces&#8217;, those faces will both
+be lumped into one &#8216;edge&#8217;.</li>
+<li>No support for parallelization yet.</li>
+</ul>
+<dl class="method">
+<dt id="ilastikrag.rag.Rag.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>label_img</em>, <em>flat_superpixels=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>label_img</strong> &#8211; <em>VigraArray</em>  <br />
+Label values do not need to be consecutive, but <em>excessively</em> high label values
+will require extra RAM when computing features, due to zeros stored
+within <code class="docutils literal"><span class="pre">RegionFeatureAccumulators</span></code>.</li>
+<li><strong>flat_superpixels</strong> &#8211; <em>bool</em> <br />
+Set to <code class="docutils literal"><span class="pre">True</span></code> if <code class="docutils literal"><span class="pre">label_img</span></code> is a 3D volume whose superpixels are flat in the xy direction.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ilastikrag.rag.Rag.supported_features">
+<code class="descname">supported_features</code><span class="sig-paren">(</span><em>accumulator_set='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.supported_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.supported_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the set of available feature names to be used
+with this Rag and the given <code class="docutils literal"><span class="pre">accumulator_set</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>accumulator_set</strong> &#8211; A list of acumulators to consider in addition to the built-in accumulators.
+If <code class="docutils literal"><span class="pre">accumulator_set=&quot;default&quot;</span></code>, then only the built-in accumulators are considered.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The list acceptable feature names.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><em>list</em> of <em>str</em></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ilastikrag.rag.Rag.compute_features">
+<code class="descname">compute_features</code><span class="sig-paren">(</span><em>value_img</em>, <em>feature_names</em>, <em>edge_group=None</em>, <em>accumulator_set='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.compute_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.compute_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>The primary API function for computing features. <br />
+Returns a pandas DataFrame with columns <code class="docutils literal"><span class="pre">['sp1',</span> <span class="pre">'sp2',</span> <span class="pre">...output</span> <span class="pre">feature</span> <span class="pre">names...]</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>value_img</strong> &#8211; <em>VigraArray</em>, same shape as <code class="docutils literal"><span class="pre">self.label_img</span></code>.         <br />
+Pixel values are converted to <code class="docutils literal"><span class="pre">float32</span></code> internally.   <br />
+If your features are computed over the labels only,     <br />
+(not pixel values), you may pass <code class="docutils literal"><span class="pre">value_img=None</span></code>     <br /></li>
+<li><strong>feature_names</strong> &#8211; <p><em>list of str</em></p>
+<p>Feature names must have the following structure:</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">&lt;accumulator_id&gt;_&lt;type&gt;_&lt;feature&gt;</span></code>.              <br /></div></blockquote>
+<p>Example feature names:</p>
+<blockquote>
+<div><ul>
+<li><code class="docutils literal"><span class="pre">standard_edge_count</span></code></li>
+<li><code class="docutils literal"><span class="pre">standard_edge_minimum</span></code></li>
+<li><code class="docutils literal"><span class="pre">standard_edge_variance</span></code></li>
+<li><code class="docutils literal"><span class="pre">standard_edge_quantiles_25</span></code></li>
+<li><code class="docutils literal"><span class="pre">standard_sp_count</span></code></li>
+<li><code class="docutils literal"><span class="pre">standard_sp_mean</span></code></li>
+</ul>
+</div></blockquote>
+<p>The feature names are then passed to the appropriate <code class="docutils literal"><span class="pre">EdgeAccumulator</span></code> or <code class="docutils literal"><span class="pre">SpAccumulator</span></code>.
+See accumulator docs for details on supported feature names and their meanings.</p>
+<p>Features of type <code class="docutils literal"><span class="pre">edge</span></code> are computed only on the edge-adjacent pixels themselves.
+Features of type <code class="docutils literal"><span class="pre">sp</span></code> are computed over all values in the superpixels adjacent to
+an edge, and then converted into an edge feature, typically via sum or difference
+between the two superpixels.</p>
+</li>
+<li><strong>edge_group</strong> &#8211; <p><em>str</em> or <em>list-of-str</em>                                                                <br />
+If <code class="docutils literal"><span class="pre">Rag.flat_superpixels=True</span></code>, valid choices are <code class="docutils literal"><span class="pre">'z'</span></code> or <code class="docutils literal"><span class="pre">'yx'</span></code>,
+or <code class="docutils literal"><span class="pre">['z',</span> <span class="pre">'yx']</span></code>, in which case an <code class="docutils literal"><span class="pre">OrderedDict</span></code> is returned with both results.</p>
+<p>For isotropic rags, there is only one valid choice, and it is selected by default:
+<code class="docutils literal"><span class="pre">'zyx'</span></code> (or <code class="docutils literal"><span class="pre">'yx'</span></code> if Rag is 2D).</p>
+</li>
+<li><strong>accumulator_set</strong> &#8211; A list of acumulators to use in addition to the built-in accumulators.
+If <code class="docutils literal"><span class="pre">accumulator_set=&quot;default&quot;</span></code>, then only the built-in accumulators can be used.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">All unique superpixel edges in the volume,
+with computed features stored in the columns.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><em>pandas.DataFrame</em></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rag</span> <span class="o">=</span> <span class="n">Rag</span><span class="p">(</span><span class="n">superpixels</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">feature_df</span> <span class="o">=</span> <span class="n">rag</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">grayscale_img</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;standard_edge_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_sp_count&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+<span class="go">[&#39;sp1&#39;, &#39;sp2&#39;, &#39;standard_edge_mean&#39;, &#39;standard_sp_count_sum&#39;, &#39;standard_sp_count_difference&#39;]</span>
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="9%" />
+<col width="9%" />
+<col width="23%" />
+<col width="26%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">sp1</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">sp2</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">standard_edge_mean</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">standard_sp_count_sum</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">standard_sp_count_difference</span></code></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>2</td>
+<td>123.45</td>
+<td>1000</td>
+<td>42</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>3</td>
+<td>234.56</td>
+<td>876</td>
+<td>83</td>
+</tr>
+<tr class="row-even"><td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ilastikrag.rag.Rag.edge_decisions_from_groundtruth">
+<code class="descname">edge_decisions_from_groundtruth</code><span class="sig-paren">(</span><em>groundtruth_vol</em>, <em>asdict=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.edge_decisions_from_groundtruth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.edge_decisions_from_groundtruth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a reference segmentation, return a boolean array of &#8220;decisions&#8221;
+indicating whether each edge in this RAG should be ON or OFF for best
+consistency with the groundtruth.</p>
+<p>The result is returned in the same order as <code class="docutils literal"><span class="pre">self.edge_ids</span></code>.
+An OFF edge means that the two superpixels are merged in the reference volume.</p>
+<p>If <code class="docutils literal"><span class="pre">asdict=True</span></code>, return the result as a dict of <code class="docutils literal"><span class="pre">{(sp1,</span> <span class="pre">sp2)</span> <span class="pre">:</span> <span class="pre">bool}</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ilastikrag.rag.Rag.naive_segmentation_from_edge_decisions">
+<code class="descname">naive_segmentation_from_edge_decisions</code><span class="sig-paren">(</span><em>edge_decisions</em>, <em>out=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.naive_segmentation_from_edge_decisions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.naive_segmentation_from_edge_decisions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of ON/OFF labels for the Rag edges, compute a new label volume in which
+all supervoxels with at least one inactive edge between them are merged together.</p>
+<p>Requires <code class="docutils literal"><span class="pre">networkx</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>edge_decisions</strong> &#8211; 1D bool array in the same order as <code class="docutils literal"><span class="pre">self.edge_ids</span></code>                        <br />
+<code class="docutils literal"><span class="pre">1</span></code> means &#8220;active&#8221;, i.e. the SP are separated across that edge, at least. <br />
+<code class="docutils literal"><span class="pre">0</span></code> means &#8220;inactive&#8221;, i.e. the SP will be joined in the final result.     <br /></li>
+<li><strong>out</strong> &#8211; <em>VigraArray</em> (Optional).                                                    <br />
+Same shape as <code class="docutils literal"><span class="pre">self.label_img</span></code>, but may have different <code class="docutils literal"><span class="pre">dtype</span></code>.         <br /></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><em>VigraArray</em></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ilastikrag.rag.Rag.serialize_hdf5">
+<code class="descname">serialize_hdf5</code><span class="sig-paren">(</span><em>h5py_group</em>, <em>store_labels=False</em>, <em>compression='lzf'</em>, <em>compression_opts=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.serialize_hdf5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.serialize_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize the Rag to the given hdf5 group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>h5py_group</strong> &#8211; <em>h5py.Group</em>                                                       <br />
+Where to store the data. Should not hold any other data.</li>
+<li><strong>store_labels</strong> &#8211; If True, the labels will be stored as a (compressed) h5py Dataset. <br />
+If False, the labels are <em>not</em> stored, but you are responsible     <br />
+for loading them separately when calling dataframe_to_hdf5(),      <br />
+unless you don&#8217;t plan to use superpixel features.</li>
+<li><strong>compression</strong> &#8211; Passed directly to <code class="docutils literal"><span class="pre">h5py.Group.create_dataset</span></code>.</li>
+<li><strong>compression_opts</strong> &#8211; Passed directly to <code class="docutils literal"><span class="pre">h5py.Group.create_dataset</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="ilastikrag.rag.Rag.deserialize_hdf5">
+<em class="property">classmethod </em><code class="descname">deserialize_hdf5</code><span class="sig-paren">(</span><em>h5py_group</em>, <em>label_img=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/rag.html#Rag.deserialize_hdf5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.rag.Rag.deserialize_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserialize the Rag from the given <code class="docutils literal"><span class="pre">h5py.Group</span></code>,
+which was written via <code class="docutils literal"><span class="pre">Rag.serialize_to_hdf5()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>label_img</strong> &#8211; If not <code class="docutils literal"><span class="pre">None</span></code>, don&#8217;t load labels from hdf5, use this volume instead.
+Useful for when <code class="docutils literal"><span class="pre">serialize_hdf5()</span></code> was called with <code class="docutils literal"><span class="pre">store_labels=False</span></code>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ilastikrag.rag.Rag.dense_edge_tables">
+<code class="descname">dense_edge_tables</code><a class="headerlink" href="#ilastikrag.rag.Rag.dense_edge_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read-only property.                                                    <br />
+A list of <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> objects (one per image axis).           <br />
+Each DataFrame stores the location and superpixel ids of all pixelwise <br />
+edge pairs in the volume <em>along a particular axis.</em>                    <br /></p>
+<p><strong>Example:</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="12%" />
+<col width="23%" />
+<col width="21%" />
+<col width="11%" />
+<col width="11%" />
+<col width="11%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><code class="docutils literal"><span class="pre">sp1</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">sp2</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">forwardness</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">edge_label</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">z</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">y</span></code></th>
+<th class="head"><code class="docutils literal"><span class="pre">x</span></code></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>1</td>
+<td>2</td>
+<td>True</td>
+<td>10</td>
+<td>0</td>
+<td>10</td>
+<td>13</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>2</td>
+<td>False</td>
+<td>10</td>
+<td>0</td>
+<td>10</td>
+<td>14</td>
+</tr>
+<tr class="row-even"><td>1</td>
+<td>2</td>
+<td>False</td>
+<td>10</td>
+<td>0</td>
+<td>10</td>
+<td>15</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>3</td>
+<td>True</td>
+<td>11</td>
+<td>1</td>
+<td>20</td>
+<td>42</td>
+</tr>
+<tr class="row-even"><td>1</td>
+<td>3</td>
+<td>True</td>
+<td>11</td>
+<td>1</td>
+<td>20</td>
+<td>43</td>
+</tr>
+<tr class="row-odd"><td>1</td>
+<td>3</td>
+<td>False</td>
+<td>11</td>
+<td>1</td>
+<td>20</td>
+<td>44</td>
+</tr>
+<tr class="row-even"><td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Column definitions:</strong></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="16%" />
+<col width="84%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Column</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">sp1</span></code></td>
+<td>Superpixel ID</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">sp2</span></code></td>
+<td>Superpixel ID. <em>Guarantee:</em> <code class="docutils literal"><span class="pre">(sp1</span> <span class="pre">&lt;</span> <span class="pre">sp2)</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">forwardness</span></code></td>
+<td><code class="docutils literal"><span class="pre">True</span></code> if <code class="docutils literal"><span class="pre">sp1</span></code> was on the &#8220;left&#8221; (or &#8220;upper&#8221;, etc.) side of the edge.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">edge_label</span></code></td>
+<td>A <code class="docutils literal"><span class="pre">uint32</span></code> that uniquely identifies this <code class="docutils literal"><span class="pre">(sp1,sp2)</span></code> pair, regardless of axis.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">z</span></code></td>
+<td>Z-coordinate of this pixel edge</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">y</span></code></td>
+<td>Y-coordinate of this pixel edge</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">x</span></code></td>
+<td>X-coordinate of this pixel edge</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="accumulators.html" class="btn btn-neutral float-right" title="Feature Accumulators" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Tutorials" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

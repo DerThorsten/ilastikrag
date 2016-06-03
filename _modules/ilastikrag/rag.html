@@ -1,0 +1,1241 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.rag &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.rag</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.rag</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">izip</span><span class="p">,</span> <span class="n">imap</span><span class="p">,</span> <span class="n">groupby</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">vigra</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">label_vol_mapping</span><span class="p">,</span> <span class="n">edge_mask_for_axis</span><span class="p">,</span> <span class="n">edge_ids_for_axis</span><span class="p">,</span> \
+                  <span class="n">unique_edge_labels</span><span class="p">,</span> <span class="n">extract_edge_values_for_axis</span><span class="p">,</span> <span class="n">nonzero_coord_array</span><span class="p">,</span> \
+                  <span class="n">dataframe_to_hdf5</span><span class="p">,</span> <span class="n">dataframe_from_hdf5</span>
+
+<span class="kn">from</span> <span class="nn">.accumulators.base</span> <span class="kn">import</span> <span class="n">BaseEdgeAccumulator</span><span class="p">,</span> <span class="n">BaseSpAccumulator</span>
+<span class="kn">from</span> <span class="nn">.accumulators.standard</span> <span class="kn">import</span> <span class="n">StandardEdgeAccumulator</span><span class="p">,</span> <span class="n">StandardSpAccumulator</span><span class="p">,</span> <span class="n">StandardFlatEdgeAccumulator</span>
+<span class="kn">from</span> <span class="nn">.accumulators.similarity</span> <span class="kn">import</span> <span class="n">SimilarityFlatEdgeAccumulator</span>
+<span class="kn">from</span> <span class="nn">.accumulators.edgeregion</span> <span class="kn">import</span> <span class="n">EdgeRegionEdgeAccumulator</span>
+
+<div class="viewcode-block" id="Rag"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag">[docs]</a><span class="k">class</span> <span class="nc">Rag</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Region Adjacency Graph</span>
+<span class="sd">    </span>
+<span class="sd">    Initialized with an ND label image of superpixels, and stores</span>
+<span class="sd">    the edges between superpixels.</span>
+<span class="sd">    </span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | Attribute            | Description                                                                  |</span>
+<span class="sd">    +======================+==============================================================================+</span>
+<span class="sd">    | label_img            | The label volume you passed in.                                              |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | sp_ids               | 1D ndarray of superpixel ID values, sorted.                                  |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | max_sp               | The maximum superpixel ID in the label volume                                |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | num_sp               | The number of superpixels in ``label_img``.                            |br|  |</span>
+<span class="sd">    |                      | Not necessarily the same as ``max_sp``.                                |br|  |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | num_edges            | The number of edges in the label volume.                                     |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | edge_ids             | *ndarray, shape=(N,2)*                                                 |br|  |</span>
+<span class="sd">    |                      | List of adjacent superpixel IDs, sorted. (No duplicates).              |br|  |</span>
+<span class="sd">    |                      | *Guarantee:* For all edge_ids (sp1,sp2): sp1 &lt; sp2.                    |br|  |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | unique_edge_tables   | *dict* of *pandas.DataFrame* objects                                   |br|  |</span>
+<span class="sd">    |                      | Columns: ``[sp1, sp2, edge_label]``, where ``edge_label``              |br|  |</span>
+<span class="sd">    |                      | uniquely identifies each edge ``(sp1, sp2)`` within that table.        |br|  |</span>
+<span class="sd">    |                      | See :py:attr:`unique_edge_tables` for details.                         |br|  |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | dense_edge_tables    | *OrderedDict* of *pandas.DataFrame* objects (one per isotropic axis).  |br|  |</span>
+<span class="sd">    |                      | Each DataFrame stores the id and location of all pixel                 |br|  |</span>
+<span class="sd">    |                      | edge pairs in the volume *along a particular axis.*                    |br|  |</span>
+<span class="sd">    |                      | See :py:attr:`dense_edge_tables` for details.                          |br|  |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+<span class="sd">    | flat_edge_label_img  | *ndarray, same shape as label_img except for the z-axis (1 px smaller)* |br| |</span>
+<span class="sd">    |                      | If ``flat_superpixels=True``, this is a label volume for edges along    |br| |</span>
+<span class="sd">    |                      | the z-axis, labeled according to the ``edge_label`` column from         |br| |</span>
+<span class="sd">    |                      | :py:attr:`unique_edge_tables[&#39;z&#39;] &lt;unique_edge_tables&gt;`.                |br| |</span>
+<span class="sd">    +----------------------+------------------------------------------------------------------------------+</span>
+
+<span class="sd">    **Limitations:**</span>
+
+<span class="sd">    - This representation does not check for edge contiguity, so if two </span>
+<span class="sd">      superpixels are connected via multiple &#39;faces&#39;, those faces will both</span>
+<span class="sd">      be lumped into one &#39;edge&#39;.</span>
+
+<span class="sd">    - No support for parallelization yet.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Maintenance docs</span>
+    <span class="c1">#</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implementation notes</span>
+<span class="sd">    --------------------</span>
+<span class="sd">    Internally, the edges along each axis are found independently and stored</span>
+<span class="sd">    in separate pandas.DataFrame objects (one per axis in the volume).</span>
+<span class="sd">    Every pixel face between two different superpixels is stored as a separate</span>
+<span class="sd">    row in one of those DataFrames.</span>
+<span class="sd">    </span>
+<span class="sd">    This data structure&#39;s total RAM usage is proportional to the number of</span>
+<span class="sd">    pixel faces on superpixel boundaries in the volume (i.e. the manhattan </span>
+<span class="sd">    distance of all superpixel boundaries interior to the label volume).</span>
+<span class="sd">    It needs about 23 bytes per pixel face. (Each DataFrame row is 23 bytes.)</span>
+<span class="sd">    </span>
+<span class="sd">    Here are some example stats for a typical 512^3 cube of isotropic EM data:</span>
+<span class="sd">    - 7534 superpixels</span>
+<span class="sd">    - 53354 edges between superpixels</span>
+<span class="sd">    - 19926582 (~20 million) individual edge pixel faces</span>
+<span class="sd">    </span>
+<span class="sd">    So, to handle that 0.5 GB label volume, this datastructure needs:</span>
+<span class="sd">    20e6 pixel faces * 23 bytes == 0.46 GB of storage.</span>
+<span class="sd">    </span>
+<span class="sd">    Obviously, a volume with smaller superpixels will require more storage.</span>
+<span class="sd">    </span>
+<span class="sd">    TODO</span>
+<span class="sd">    ----</span>
+<span class="sd">    - Adding a function to merge two Rags should be trivial, if it seems useful</span>
+<span class="sd">      (say, for parallelizing construction.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Used internally, during initialization</span>
+    <span class="n">_EdgeData</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;_EdgeData&quot;</span><span class="p">,</span> <span class="s2">&quot;mask mask_coords ids forwardness&quot;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Rag.__init__"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">label_img</span><span class="p">,</span> <span class="n">flat_superpixels</span><span class="o">=</span><span class="bp">False</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        label_img</span>
+<span class="sd">            *VigraArray*  |br|</span>
+<span class="sd">            Label values do not need to be consecutive, but *excessively* high label values</span>
+<span class="sd">            will require extra RAM when computing features, due to zeros stored</span>
+<span class="sd">            within ``RegionFeatureAccumulators``.</span>
+<span class="sd">        </span>
+<span class="sd">        flat_superpixels</span>
+<span class="sd">            *bool* |br|</span>
+<span class="sd">            Set to ``True`` if ``label_img`` is a 3D volume whose superpixels are flat in the xy direction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">label_img</span> <span class="o">==</span> <span class="s1">&#39;__will_deserialize__&#39;</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="s1">&#39;axistags&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;For optimal performance, make sure label_img is a VigraArray with accurate axistags&quot;</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="s1">&#39;zyx&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;Only axes z,y,x are permitted, not {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">label_img</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">,</span> \
+            <span class="s2">&quot;label_img must have dtype uint32&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">flat_superpixels</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">(</span><span class="s1">&#39;zyx&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())),</span> \
+            <span class="s2">&quot;Can&#39;t use flat_superpixels with a 2D image.&quot;</span>
+        
+        <span class="n">axes</span> <span class="o">=</span> <span class="s1">&#39;zyx&#39;</span><span class="p">[</span><span class="o">-</span><span class="n">label_img</span><span class="o">.</span><span class="n">ndim</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span> <span class="o">=</span> <span class="n">label_img</span><span class="o">.</span><span class="n">withAxes</span><span class="p">(</span><span class="n">axes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span> <span class="o">=</span> <span class="n">flat_superpixels</span>
+        
+        <span class="n">edge_datas</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">axiskey</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+
+            <span class="k">if</span> <span class="n">flat_superpixels</span> <span class="ow">and</span> <span class="n">axiskey</span> <span class="o">==</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span>
+                <span class="n">edge_mask</span> <span class="o">=</span> <span class="bp">None</span> <span class="c1"># edge_ids_for_axis() supports edge_mask=None</span>
+                <span class="n">edge_mask_coords</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">edge_mask</span> <span class="o">=</span> <span class="n">edge_mask_for_axis</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+                <span class="n">edge_mask_coords</span> <span class="o">=</span> <span class="n">nonzero_coord_array</span><span class="p">(</span><span class="n">edge_mask</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+                
+                <span class="c1"># Save RAM: Convert to the smallest dtype we can get away with.</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                    <span class="n">edge_mask_coords</span> <span class="o">=</span> <span class="n">edge_mask_coords</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">edge_mask_coords</span> <span class="o">=</span> <span class="n">edge_mask_coords</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+                    
+            <span class="n">edge_ids</span> <span class="o">=</span> <span class="n">edge_ids_for_axis</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="n">edge_mask</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+            <span class="n">edge_forwardness</span> <span class="o">=</span> <span class="n">edge_ids</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">edge_ids</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">edge_ids</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+            <span class="n">edge_datas</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span> <span class="o">=</span> <span class="n">Rag</span><span class="o">.</span><span class="n">_EdgeData</span><span class="p">(</span><span class="n">edge_mask</span><span class="p">,</span> <span class="n">edge_mask_coords</span><span class="p">,</span> <span class="n">edge_ids</span><span class="p">,</span> <span class="n">edge_forwardness</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_unique_edge_tables</span><span class="p">(</span><span class="n">edge_datas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_dense_edge_tables</span><span class="p">(</span><span class="n">edge_datas</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_edge_ids</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_sp_attributes</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">flat_superpixels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_flat_edge_label_img</span><span class="p">(</span><span class="n">edge_datas</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">label_img</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">flat_superpixels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sp_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_sp</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_sp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_sp</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">all_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">all_axes</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">edge_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_edge_ids</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">flat_edge_label_img</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_edge_label_img</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">unique_edge_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *OrderedDict* of *pandas.DataFrame* objects.</span>
+<span class="sd">        </span>
+<span class="sd">        Each of these tables represents the set of edges that lie along a particular set of axes.</span>
+
+<span class="sd">        If ``flat_superpixels=False``, then this dict contains just one item,</span>
+<span class="sd">        with key ``zyx`` or ``yx``, depending on whether or not ``label_img`` is 3D or 2D.</span>
+<span class="sd">        </span>
+<span class="sd">        If ``flat_superpixels=True``, then this dict contains two tables for the disjoint</span>
+<span class="sd">        sets of ``yx`` edges and ``z`` edges.  And additionally, it contains a third table in</span>
+<span class="sd">        key ``zyx`` with all edges in the Rag (i.e. the superset of edges ``z``and ``yx``).</span>
+
+<span class="sd">        Each table has columns: ``[sp1, sp2, edge_label]``, where ``edge_label`` </span>
+<span class="sd">        uniquely identifies each edge ``(sp1, sp2)`` within *that table*.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">           Each table has an independent ``edge_label`` column. For a given edge</span>
+<span class="sd">           ``(sp1,sp2)``, ``edge_label`` in table ``yx`` will not match the edge_label</span>
+<span class="sd">           in table ``zyx``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dense_edge_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read-only property.                                                    |br|</span>
+<span class="sd">        A list of ``pandas.DataFrame`` objects (one per image axis).           |br|</span>
+<span class="sd">        Each DataFrame stores the location and superpixel ids of all pixelwise |br|</span>
+<span class="sd">        edge pairs in the volume *along a particular axis.*                    |br|</span>
+
+<span class="sd">        **Example:**</span>
+<span class="sd">        </span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        | ``sp1`` | ``sp2`` | ``forwardness`` | ``edge_label`` | ``z``  | ``y``  | ``x``  |  </span>
+<span class="sd">        +=========+=========+=================+================+========+========+========+</span>
+<span class="sd">        |   1     |   2     |   True          |   10           |   0    |   10   |   13   |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        |   1     |   2     |   False         |   10           |   0    |   10   |   14   |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        |   1     |   2     |   False         |   10           |   0    |   10   |   15   |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        |   1     |   3     |   True          |   11           |   1    |   20   |   42   |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        |   1     |   3     |   True          |   11           |   1    |   20   |   43   |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        |   1     |   3     |   False         |   11           |   1    |   20   |   44   |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        | ...     | ...     | ...             | ...            | ...    | ...    | ...    |</span>
+<span class="sd">        +---------+---------+-----------------+----------------+--------+--------+--------+</span>
+<span class="sd">        </span>
+<span class="sd">        **Column definitions:**</span>
+<span class="sd">        </span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | Column          | Description                                                                            |</span>
+<span class="sd">        +=================+========================================================================================+</span>
+<span class="sd">        | ``sp1``         | Superpixel ID                                                                          |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | ``sp2``         | Superpixel ID. *Guarantee:* ``(sp1 &lt; sp2)``                                            |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | ``forwardness`` | ``True`` if ``sp1`` was on the &quot;left&quot; (or &quot;upper&quot;, etc.) side of the edge.             |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | ``edge_label``  | A ``uint32`` that uniquely identifies this ``(sp1,sp2)`` pair, regardless of axis.     |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | ``z``           | Z-coordinate of this pixel edge                                                        |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | ``y``           | Y-coordinate of this pixel edge                                                        |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        | ``x``           | X-coordinate of this pixel edge                                                        |</span>
+<span class="sd">        +-----------------+----------------------------------------------------------------------------------------+</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dense_edge_tables</span>
+
+    <span class="k">def</span> <span class="nf">_init_unique_edge_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_datas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the edge_label_lookup_df attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">all_edge_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">ids</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">edge_datas</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">all_axes</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_edge_labels</span><span class="p">(</span> <span class="n">all_edge_ids</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_edge_ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+            <span class="k">assert</span> <span class="n">edge_datas</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+            <span class="n">unique_z</span> <span class="o">=</span> <span class="n">unique_edge_labels</span><span class="p">(</span> <span class="p">[</span><span class="n">all_edge_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="p">)</span>
+            <span class="n">unique_yx</span> <span class="o">=</span> <span class="n">unique_edge_labels</span><span class="p">(</span> <span class="n">all_edge_ids</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="p">)</span>
+            <span class="n">unique_zyx</span> <span class="o">=</span> <span class="n">unique_edge_labels</span><span class="p">(</span> <span class="p">[</span> <span class="n">unique_z</span><span class="p">[[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                               <span class="n">unique_yx</span><span class="p">[[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span> <span class="p">]</span> <span class="p">)</span>
+
+            <span class="c1"># If the superpixels are really flat, then unique_yx and unique_z</span>
+            <span class="c1"># should be completely disjoint.</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_zyx</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_z</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_yx</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_z</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;yx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_yx</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;zyx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_zyx</span>
+
+    <span class="k">def</span> <span class="nf">_init_edge_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Tiny optimization:</span>
+        <span class="c1"># Users will be accessing Rag.edge_ids over and over, so let&#39;s </span>
+        <span class="c1"># cache them now instead of extracting them on-the-fly</span>
+        <span class="n">all_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edge_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">all_axes</span><span class="p">][[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">def</span> <span class="nf">_init_flat_edge_label_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_datas</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span>
+        <span class="n">unique_table_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">unique_table_z</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">,</span> <span class="s1">&#39;edge_label&#39;</span><span class="p">]</span>
+        
+        <span class="n">dense_table_z</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">edge_datas</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ids</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">])</span>
+        <span class="n">dense_table_with_labels</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">dense_table_z</span><span class="p">,</span> <span class="n">unique_table_z</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">flat_edge_label_img</span> <span class="o">=</span> <span class="n">dense_table_with_labels</span><span class="p">[</span><span class="s1">&#39;edge_label&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">flat_edge_label_img</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flat_edge_label_img</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span><span class="n">flat_edge_label_img</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_init_dense_edge_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_datas</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct the N dense_edge_tables (one for each axis)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span><span class="p">:</span>
+            <span class="n">dense_axes</span> <span class="o">=</span> <span class="s1">&#39;yx&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dense_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        
+        <span class="c1"># Now create an dense_edge_table for each axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dense_edge_tables</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">axiskey</span> <span class="ow">in</span> <span class="n">dense_axes</span><span class="p">:</span>
+            <span class="n">edge_data</span> <span class="o">=</span> <span class="n">edge_datas</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span>
+
+            <span class="c1"># Use uint32 index instead of deafult int64 to save ram            </span>
+            <span class="n">index_u32</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">edge_data</span><span class="o">.</span><span class="n">ids</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+
+            <span class="c1"># Initialize with edge sp ids and directionality</span>
+            <span class="n">edge_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">,</span> <span class="s1">&#39;is_forward&#39;</span><span class="p">],</span>
+                                       <span class="n">index</span><span class="o">=</span><span class="n">index_u32</span><span class="p">,</span>
+                                       <span class="n">data</span><span class="o">=</span><span class="p">{</span> <span class="s1">&#39;sp1&#39;</span><span class="p">:</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">ids</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                                              <span class="s1">&#39;sp2&#39;</span><span class="p">:</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">ids</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                                              <span class="s1">&#39;is_forward&#39;</span><span class="p">:</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">forwardness</span> <span class="p">}</span> <span class="p">)</span>
+
+            <span class="c1"># Add &#39;edge_label&#39; column. Note: pd.merge() is like a SQL &#39;join&#39;</span>
+            <span class="n">dense_edge_table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">edge_table</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">dense_axes</span><span class="p">],</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            
+            <span class="c1"># Append columns for coordinates</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">mask_coords</span><span class="p">):</span>
+                <span class="n">dense_edge_table</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">coords</span>
+
+            <span class="c1"># Set column names</span>
+            <span class="n">coord_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="n">dense_edge_table</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">,</span> <span class="s1">&#39;forwardness&#39;</span><span class="p">,</span> <span class="s1">&#39;edge_label&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">coord_cols</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dense_edge_tables</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span> <span class="o">=</span> <span class="n">dense_edge_table</span>
+
+    <span class="k">def</span> <span class="nf">_init_sp_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute and store our properties for sp_ids, num_sp, max_sp</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="c1"># Cache the unique sp ids to expose as an attribute</span>
+        <span class="c1"># FIXME: vigra.unique() would be faster, and no implicit cast to int64</span>
+        <span class="n">unique_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">all_axes</span><span class="p">][</span><span class="s1">&#39;sp1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="n">unique_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">all_axes</span><span class="p">][</span><span class="s1">&#39;sp2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">unique_left</span><span class="p">,</span> <span class="n">unique_right</span><span class="p">))</span> <span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        
+        <span class="c1"># We don&#39;t assume that SP ids are consecutive,</span>
+        <span class="c1"># so num_sp is not the same as label_img.max()        </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_sp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_sp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sp_ids</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+
+    <span class="c1"># Initialize Rag.DEFAULT_ACCUMULATOR_CLASSES</span>
+    <span class="n">DEFAULT_ACCUMULATOR_CLASSES</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">acc_cls</span> <span class="ow">in</span> <span class="p">[</span><span class="n">StandardEdgeAccumulator</span><span class="p">,</span> <span class="n">StandardSpAccumulator</span><span class="p">,</span> <span class="n">StandardFlatEdgeAccumulator</span><span class="p">,</span>
+                    <span class="n">EdgeRegionEdgeAccumulator</span><span class="p">,</span> <span class="n">SimilarityFlatEdgeAccumulator</span><span class="p">]:</span>
+        <span class="n">DEFAULT_ACCUMULATOR_CLASSES</span><span class="p">[(</span><span class="n">acc_cls</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> <span class="n">acc_cls</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span><span class="p">)]</span> <span class="o">=</span> <span class="n">acc_cls</span>
+
+<div class="viewcode-block" id="Rag.supported_features"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.supported_features">[docs]</a>    <span class="k">def</span> <span class="nf">supported_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the set of available feature names to be used</span>
+<span class="sd">        with this Rag and the given ``accumulator_set``.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        accumulator_set:</span>
+<span class="sd">            A list of acumulators to consider in addition to the built-in accumulators.</span>
+<span class="sd">            If ``accumulator_set=&quot;default&quot;``, then only the built-in accumulators are considered.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        *list* of *str*</span>
+<span class="sd">            The list acceptable feature names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Rag</span><span class="o">.</span><span class="n">_check_accumulator_conflicts</span><span class="p">(</span><span class="n">accumulator_set</span><span class="p">)</span>
+
+        <span class="n">feature_groups</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">accumulator_set</span> <span class="o">!=</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">acc</span> <span class="ow">in</span> <span class="n">accumulator_set</span><span class="p">:</span>
+                <span class="n">feature_groups</span><span class="p">[(</span><span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span><span class="p">)]</span> <span class="o">=</span> <span class="n">acc</span><span class="o">.</span><span class="n">supported_features</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">)</span> <span class="ow">in</span> <span class="n">Rag</span><span class="o">.</span><span class="n">DEFAULT_ACCUMULATOR_CLASSES</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="p">:</span>
+                <span class="n">acc_cls</span> <span class="o">=</span> <span class="n">Rag</span><span class="o">.</span><span class="n">DEFAULT_ACCUMULATOR_CLASSES</span><span class="p">[(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">)]</span>
+                <span class="n">feature_groups</span><span class="p">[(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">)]</span> <span class="o">=</span> <span class="n">acc_cls</span><span class="o">.</span><span class="n">supported_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">group_names</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">feature_names</span> <span class="o">+=</span> <span class="n">group_names</span>
+        <span class="k">return</span> <span class="n">feature_names</span></div>
+
+<div class="viewcode-block" id="Rag.compute_features"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.compute_features">[docs]</a>    <span class="k">def</span> <span class="nf">compute_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">edge_group</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The primary API function for computing features. |br|</span>
+<span class="sd">        Returns a pandas DataFrame with columns ``[&#39;sp1&#39;, &#39;sp2&#39;, ...output feature names...]``</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value_img</span>
+<span class="sd">            *VigraArray*, same shape as ``self.label_img``.         |br|</span>
+<span class="sd">            Pixel values are converted to ``float32`` internally.   |br|</span>
+<span class="sd">            If your features are computed over the labels only,     |br|</span>
+<span class="sd">            (not pixel values), you may pass ``value_img=None``     |br|</span>
+<span class="sd">        </span>
+<span class="sd">        feature_names</span>
+<span class="sd">            *list of str*</span>
+<span class="sd">            </span>
+<span class="sd">            Feature names must have the following structure:</span>
+<span class="sd">            </span>
+<span class="sd">                ``&lt;accumulator_id&gt;_&lt;type&gt;_&lt;feature&gt;``.              |br|</span>
+<span class="sd">            </span>
+<span class="sd">            Example feature names:</span>
+<span class="sd">                </span>
+<span class="sd">                - ``standard_edge_count``</span>
+<span class="sd">                - ``standard_edge_minimum``</span>
+<span class="sd">                - ``standard_edge_variance``</span>
+<span class="sd">                - ``standard_edge_quantiles_25``</span>
+<span class="sd">                - ``standard_sp_count``</span>
+<span class="sd">                - ``standard_sp_mean``</span>
+
+<span class="sd">            The feature names are then passed to the appropriate ``EdgeAccumulator`` or ``SpAccumulator``.            </span>
+<span class="sd">            See accumulator docs for details on supported feature names and their meanings.</span>
+<span class="sd">            </span>
+<span class="sd">            Features of type ``edge`` are computed only on the edge-adjacent pixels themselves.</span>
+<span class="sd">            Features of type ``sp`` are computed over all values in the superpixels adjacent to</span>
+<span class="sd">            an edge, and then converted into an edge feature, typically via sum or difference</span>
+<span class="sd">            between the two superpixels.</span>
+
+<span class="sd">        edge_group</span>
+<span class="sd">            *str* or *list-of-str*                                                                |br|</span>
+<span class="sd">            If ``Rag.flat_superpixels=True``, valid choices are ``&#39;z&#39;`` or ``&#39;yx&#39;``,</span>
+<span class="sd">            or ``[&#39;z&#39;, &#39;yx&#39;]``, in which case an ``OrderedDict`` is returned with both results.</span>
+<span class="sd">            </span>
+<span class="sd">            For isotropic rags, there is only one valid choice, and it is selected by default:</span>
+<span class="sd">            ``&#39;zyx&#39;`` (or ``&#39;yx&#39;`` if Rag is 2D).</span>
+<span class="sd">        </span>
+<span class="sd">        accumulator_set</span>
+<span class="sd">            A list of acumulators to use in addition to the built-in accumulators.</span>
+<span class="sd">            If ``accumulator_set=&quot;default&quot;``, then only the built-in accumulators can be used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        *pandas.DataFrame*</span>
+<span class="sd">            All unique superpixel edges in the volume,</span>
+<span class="sd">            with computed features stored in the columns.</span>
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        ::</span>
+
+<span class="sd">           &gt;&gt;&gt; rag = Rag(superpixels)</span>
+<span class="sd">           &gt;&gt;&gt; feature_df = rag.compute_features(grayscale_img, [&#39;standard_edge_mean&#39;, &#39;standard_sp_count&#39;])</span>
+<span class="sd">           &gt;&gt;&gt; print list(feature_df.columns)</span>
+<span class="sd">           [&#39;sp1&#39;, &#39;sp2&#39;, &#39;standard_edge_mean&#39;, &#39;standard_sp_count_sum&#39;, &#39;standard_sp_count_difference&#39;]</span>
+<span class="sd">        </span>
+<span class="sd">        +---------+---------+------------------------+---------------------------+----------------------------------+</span>
+<span class="sd">        | ``sp1`` | ``sp2`` | ``standard_edge_mean`` | ``standard_sp_count_sum`` | ``standard_sp_count_difference`` |</span>
+<span class="sd">        +=========+=========+========================+===========================+==================================+</span>
+<span class="sd">        | 1       | 2       | 123.45                 | 1000                      | 42                               |</span>
+<span class="sd">        +---------+---------+------------------------+---------------------------+----------------------------------+</span>
+<span class="sd">        | 1       | 3       | 234.56                 | 876                       | 83                               |</span>
+<span class="sd">        +---------+---------+------------------------+---------------------------+----------------------------------+</span>
+<span class="sd">        | ...     | ...     | ...                    | ...                       | ...                              |</span>
+<span class="sd">        +---------+---------+------------------------+---------------------------+----------------------------------+</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">value_img</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value_img</span><span class="p">,</span> <span class="s1">&#39;axistags&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;For optimal performance, make sure label_img is a VigraArray with accurate axistags&quot;</span>
+        <span class="n">dense_axes</span> <span class="o">=</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flat_superpixels</span><span class="p">:</span>
+            <span class="n">valid_edge_groups</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;yx&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">valid_edge_groups</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()),)</span>
+
+        <span class="k">if</span> <span class="n">edge_group</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span><span class="p">,</span> <span class="s2">&quot;Must provide an edge_group&quot;</span>
+            <span class="n">edge_group</span> <span class="o">=</span> <span class="n">dense_axes</span>
+
+        <span class="n">edge_group</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">edge_group</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_group</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">edge_group</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">edge_group</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">edge_group</span> <span class="ow">in</span> <span class="n">valid_edge_groups</span> <span class="k">for</span> <span class="n">edge_group</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> \
+            <span class="s2">&quot;Unsupported edge_group.&quot;</span>
+        
+        <span class="n">feature_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_feature_groups</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">dense_axes</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># Create a DataFrame for the results</span>
+            <span class="n">dense_axes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">dense_edge_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="p">[</span><span class="n">dense_axes</span><span class="p">][[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+            
+            <span class="n">index_u32</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dense_edge_ids</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+            <span class="n">edge_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dense_edge_ids</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">index_u32</span><span class="p">)</span>
+    
+            <span class="c1"># Compute and append columns</span>
+            <span class="k">if</span> <span class="s1">&#39;edge&#39;</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="p">:</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_edge_features_for_values</span><span class="p">(</span><span class="n">edge_df</span><span class="p">,</span> <span class="n">feature_groups</span><span class="p">[</span><span class="s1">&#39;edge&#39;</span><span class="p">],</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+    
+            <span class="k">if</span> <span class="s1">&#39;sp&#39;</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="p">:</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_sp_features_for_values</span><span class="p">(</span><span class="n">edge_df</span><span class="p">,</span> <span class="n">feature_groups</span><span class="p">[</span><span class="s1">&#39;sp&#39;</span><span class="p">],</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+            
+            <span class="n">results</span><span class="p">[</span><span class="n">dense_axes</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_df</span>
+
+            <span class="c1"># Typecheck the columns to help new accumulator authors spot problems in their code.</span>
+            <span class="n">dtypes</span> <span class="o">=</span> <span class="p">{</span> <span class="n">colname</span><span class="p">:</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span> <span class="k">for</span> <span class="n">colname</span><span class="p">,</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">edge_df</span><span class="o">.</span><span class="n">iterkv</span><span class="p">()</span> <span class="p">}</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">dtypes</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> \
+                <span class="s2">&quot;An accumulator returned float64 features. That&#39;s a waste of ram.</span><span class="se">\n</span><span class="s2">&quot;</span>\
+                <span class="s2">&quot;dtypes were: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dtypes</span><span class="p">)</span>
+
+
+        <span class="c1"># FIXME: This recomputes the sp features</span>
+        <span class="k">if</span> <span class="s1">&#39;z&#39;</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># Create a DataFrame for the results</span>
+            <span class="n">index_u32</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">])),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+            <span class="n">edge_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">][[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">index_u32</span><span class="p">)</span>
+    
+            <span class="c1"># Compute and append columns</span>
+            <span class="k">if</span> <span class="s1">&#39;flatedge&#39;</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="p">:</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_flatedge_features_for_values</span><span class="p">(</span><span class="n">edge_df</span><span class="p">,</span> <span class="n">feature_groups</span><span class="p">[</span><span class="s1">&#39;flatedge&#39;</span><span class="p">],</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+    
+            <span class="k">if</span> <span class="s1">&#39;sp&#39;</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="p">:</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_sp_features_for_values</span><span class="p">(</span><span class="n">edge_df</span><span class="p">,</span> <span class="n">feature_groups</span><span class="p">[</span><span class="s1">&#39;sp&#39;</span><span class="p">],</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+
+            <span class="n">results</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_df</span>
+            
+            <span class="c1"># Typecheck the columns to help new accumulator authors spot problems in their code.</span>
+            <span class="n">dtypes</span> <span class="o">=</span> <span class="p">{</span> <span class="n">colname</span><span class="p">:</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span> <span class="k">for</span> <span class="n">colname</span><span class="p">,</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">edge_df</span><span class="o">.</span><span class="n">iterkv</span><span class="p">()</span> <span class="p">}</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">dtypes</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> \
+                <span class="s2">&quot;An accumulator returned float64 features. That&#39;s a waste of ram.</span><span class="se">\n</span><span class="s2">&quot;</span>\
+                <span class="s2">&quot;dtypes were: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dtypes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">results</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_feature_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For the given list of feature_names, return features grouped in a dict:</span>
+<span class="sd">            feature_groups[acc_type][acc_id] : [feature_name1, feature_name2, ...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Rag</span><span class="o">.</span><span class="n">_check_accumulator_conflicts</span><span class="p">(</span><span class="n">accumulator_set</span><span class="p">)</span>
+
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">)</span>
+        <span class="n">sorted_feature_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">name</span><span class="p">:</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># Group the names by type (edge/sp), then by accumulator ID,</span>
+        <span class="c1"># but preserve the order of the features in each group (as a convenience to the user)</span>
+        <span class="n">feature_groups</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">),</span> <span class="n">feature_group</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">sorted_feature_names</span><span class="p">,</span>
+                                                         <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">name</span><span class="p">:</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]):</span>
+            <span class="n">feature_groups</span><span class="p">[</span><span class="n">acc_type</span><span class="p">][</span><span class="n">acc_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_group</span><span class="p">)</span>
+
+        <span class="c1"># We only know about &#39;edge&#39; and &#39;sp&#39; features.</span>
+        <span class="n">unknown_feature_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">feature_groups</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;edge&#39;</span><span class="p">,</span> <span class="s1">&#39;sp&#39;</span><span class="p">,</span> <span class="s1">&#39;flatedge&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">unknown_feature_types</span><span class="p">:</span>
+            <span class="n">bad_names</span> <span class="o">=</span> <span class="n">feature_groups</span><span class="p">[</span><span class="n">unknown_feature_types</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">unknown_feature_types</span><span class="p">,</span> <span class="s2">&quot;Feature(s) have unknown type: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bad_names</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">feature_groups</span>
+
+    <span class="k">def</span> <span class="nf">_append_edge_features_for_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">,</span> <span class="n">edge_feature_groups</span><span class="p">,</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute edge features and append them as columns to the given DataFrame.</span>
+<span class="sd">        </span>
+<span class="sd">        edge_df: DataFrame with columns (sp1, sp2) at least.</span>
+<span class="sd">        edge_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }</span>
+<span class="sd">        value_img: ndarray of pixel values, or None</span>
+<span class="sd">        accumulator_set: A list of additional accumulators to consider, or &quot;default&quot; to just use built-in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract values at the edge pixels</span>
+        <span class="k">if</span> <span class="n">value_img</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">edge_values</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">edge_values</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">axiskey</span><span class="p">,</span> <span class="n">dense_edge_table</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">axis_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axiskey</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Axis {}: Extracting values...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">axiskey</span> <span class="p">))</span>
+                <span class="n">coord_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="n">mask_coords</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">_colname</span><span class="p">,</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">dense_edge_table</span><span class="p">[</span><span class="n">coord_cols</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+                <span class="n">edge_values</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span> <span class="o">=</span> <span class="n">extract_edge_values_for_axis</span><span class="p">(</span><span class="n">axis_index</span><span class="p">,</span> <span class="n">mask_coords</span><span class="p">,</span> <span class="n">value_img</span><span class="p">)</span>
+
+        <span class="c1"># Create an accumulator for each group</span>
+        <span class="k">for</span> <span class="n">acc_id</span><span class="p">,</span> <span class="n">feature_group_names</span> <span class="ow">in</span> <span class="n">edge_feature_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">edge_accumulator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_accumulator_for_group</span><span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="s1">&#39;edge&#39;</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+            <span class="n">unsupported_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">feature_group_names</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">edge_accumulator</span><span class="o">.</span><span class="n">supported_features</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">unsupported_names</span><span class="p">,</span> \
+                <span class="s2">&quot;Some of your requested features aren&#39;t supported by this accumulator: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unsupported_names</span><span class="p">)</span>
+            
+            <span class="k">with</span> <span class="n">edge_accumulator</span><span class="p">:</span>
+                <span class="n">edge_accumulator</span><span class="o">.</span><span class="n">ingest_edges</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">edge_values</span> <span class="p">)</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="n">edge_accumulator</span><span class="o">.</span><span class="n">append_edge_features_to_df</span><span class="p">(</span><span class="n">edge_df</span><span class="p">)</span>
+
+            <span class="c1"># If the accumulator provided more features than the</span>
+            <span class="c1"># user is asking for right now, remove the extra columns</span>
+            <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">edge_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="s1">&#39;_edge_&#39;</span> <span class="ow">in</span> <span class="n">colname</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">colname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">feature_group_names</span><span class="p">):</span>
+                    <span class="k">del</span> <span class="n">edge_df</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">edge_df</span>
+
+    <span class="k">def</span> <span class="nf">_append_sp_features_for_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">,</span> <span class="n">sp_feature_groups</span><span class="p">,</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute superpixel-based features and append them as columns to the given DataFrame.</span>
+<span class="sd">        </span>
+<span class="sd">        edge_df: DataFrame with columns (sp1, sp2) at least.</span>
+<span class="sd">        sp_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }</span>
+<span class="sd">        value_img: ndarray of pixel values, or None</span>
+<span class="sd">        accumulator_set: A list of additional accumulators to consider, or &quot;default&quot; to just use built-in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="p">,</span> <span class="n">Rag</span><span class="o">.</span><span class="n">_EmptyLabels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t compute superpixel-based features.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                      <span class="s2">&quot;You deserialized the Rag without deserializing the labels.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create an accumulator for each group</span>
+        <span class="k">for</span> <span class="n">acc_id</span><span class="p">,</span> <span class="n">feature_group_names</span> <span class="ow">in</span> <span class="n">sp_feature_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">sp_accumulator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_accumulator_for_group</span><span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="s1">&#39;sp&#39;</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+            <span class="n">unsupported_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">feature_group_names</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">sp_accumulator</span><span class="o">.</span><span class="n">supported_features</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">unsupported_names</span><span class="p">,</span> \
+                <span class="s2">&quot;Some of your requested features aren&#39;t supported by this accumulator: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unsupported_names</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">sp_accumulator</span><span class="p">:</span>
+                <span class="n">sp_accumulator</span><span class="o">.</span><span class="n">ingest_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_img</span><span class="p">)</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="n">sp_accumulator</span><span class="o">.</span><span class="n">append_edge_features_to_df</span><span class="p">(</span><span class="n">edge_df</span><span class="p">)</span>
+
+                <span class="c1"># If the accumulator provided more features than the</span>
+                <span class="c1"># user is asking for right now, remove the extra columns</span>
+                <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">edge_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+                    <span class="k">if</span> <span class="s1">&#39;_sp_&#39;</span> <span class="ow">in</span> <span class="n">colname</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">colname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">feature_group_names</span><span class="p">):</span>
+                        <span class="k">del</span> <span class="n">edge_df</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">edge_df</span>
+
+    <span class="k">def</span> <span class="nf">_append_flatedge_features_for_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">,</span> <span class="n">flatedge_feature_groups</span><span class="p">,</span> <span class="n">value_img</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute superpixel-based features and append them as columns to the given DataFrame.</span>
+<span class="sd">        </span>
+<span class="sd">        edge_df: DataFrame with columns (sp1, sp2) at least.</span>
+<span class="sd">        flatedge_feature_groups: Dict of { accumulator_id : [feature_name, feature_name...] }</span>
+<span class="sd">        value_img: ndarray of pixel values, or None</span>
+<span class="sd">        accumulator_set: A list of additional accumulators to consider, or &quot;default&quot; to just use built-in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="p">,</span> <span class="n">Rag</span><span class="o">.</span><span class="n">_EmptyLabels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t compute flatedge features.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                      <span class="s2">&quot;You deserialized the Rag without deserializing the labels.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create an accumulator for each group</span>
+        <span class="k">for</span> <span class="n">acc_id</span><span class="p">,</span> <span class="n">feature_group_names</span> <span class="ow">in</span> <span class="n">flatedge_feature_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">flatedge_accumulator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_accumulator_for_group</span><span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="s1">&#39;flatedge&#39;</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">)</span>
+            <span class="n">unsupported_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">feature_group_names</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">flatedge_accumulator</span><span class="o">.</span><span class="n">supported_features</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">unsupported_names</span><span class="p">,</span> \
+                <span class="s2">&quot;Some of your requested features aren&#39;t supported by this accumulator: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unsupported_names</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">flatedge_accumulator</span><span class="p">:</span>
+                <span class="n">flatedge_accumulator</span><span class="o">.</span><span class="n">ingest_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_img</span><span class="p">)</span>
+                <span class="n">edge_df</span> <span class="o">=</span> <span class="n">flatedge_accumulator</span><span class="o">.</span><span class="n">append_edge_features_to_df</span><span class="p">(</span><span class="n">edge_df</span><span class="p">)</span>
+
+                <span class="c1"># If the accumulator provided more features than the</span>
+                <span class="c1"># user is asking for right now, remove the extra columns</span>
+                <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">edge_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+                    <span class="k">if</span> <span class="s1">&#39;_flatedge_&#39;</span> <span class="ow">in</span> <span class="n">colname</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">colname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">feature_group_names</span><span class="p">):</span>
+                        <span class="k">del</span> <span class="n">edge_df</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">edge_df</span>
+
+<div class="viewcode-block" id="Rag.edge_decisions_from_groundtruth"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.edge_decisions_from_groundtruth">[docs]</a>    <span class="k">def</span> <span class="nf">edge_decisions_from_groundtruth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groundtruth_vol</span><span class="p">,</span> <span class="n">asdict</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a reference segmentation, return a boolean array of &quot;decisions&quot;</span>
+<span class="sd">        indicating whether each edge in this RAG should be ON or OFF for best</span>
+<span class="sd">        consistency with the groundtruth.</span>
+<span class="sd">        </span>
+<span class="sd">        The result is returned in the same order as ``self.edge_ids``.</span>
+<span class="sd">        An OFF edge means that the two superpixels are merged in the reference volume.</span>
+<span class="sd">        </span>
+<span class="sd">        If ``asdict=True``, return the result as a dict of ``{(sp1, sp2) : bool}``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">groundtruth_vol</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">sp_to_gt_mapping</span> <span class="o">=</span> <span class="n">label_vol_mapping</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="p">,</span> <span class="n">groundtruth_vol</span><span class="p">)</span>
+
+        <span class="n">unique_sp_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_ids</span>
+        <span class="n">decisions</span> <span class="o">=</span> <span class="n">sp_to_gt_mapping</span><span class="p">[</span><span class="n">unique_sp_edges</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]]</span> <span class="o">!=</span> <span class="n">sp_to_gt_mapping</span><span class="p">[</span><span class="n">unique_sp_edges</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]]</span>
+    
+        <span class="k">if</span> <span class="n">asdict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span> <span class="n">izip</span><span class="p">(</span><span class="n">imap</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">unique_sp_edges</span><span class="p">),</span> <span class="n">decisions</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">decisions</span></div>
+
+<div class="viewcode-block" id="Rag.naive_segmentation_from_edge_decisions"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.naive_segmentation_from_edge_decisions">[docs]</a>    <span class="k">def</span> <span class="nf">naive_segmentation_from_edge_decisions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_decisions</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a list of ON/OFF labels for the Rag edges, compute a new label volume in which</span>
+<span class="sd">        all supervoxels with at least one inactive edge between them are merged together.</span>
+<span class="sd">        </span>
+<span class="sd">        Requires ``networkx``.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        edge_decisions</span>
+<span class="sd">            1D bool array in the same order as ``self.edge_ids``                        |br|</span>
+<span class="sd">            ``1`` means &quot;active&quot;, i.e. the SP are separated across that edge, at least. |br|</span>
+<span class="sd">            ``0`` means &quot;inactive&quot;, i.e. the SP will be joined in the final result.     |br|</span>
+<span class="sd">    </span>
+<span class="sd">        out</span>
+<span class="sd">            *VigraArray* (Optional).                                                    |br|</span>
+<span class="sd">            Same shape as ``self.label_img``, but may have different ``dtype``.         |br|</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        *VigraArray*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">networkx</span> <span class="kn">as</span> <span class="nn">nx</span>
+        <span class="k">assert</span> <span class="n">out</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s1">&#39;axistags&#39;</span><span class="p">),</span> \
+            <span class="s2">&quot;Must provide accurate axistags, otherwise performance suffers by 10x&quot;</span>
+        <span class="k">assert</span> <span class="n">edge_decisions</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edge_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span>
+    
+        <span class="n">inactive_edge_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_ids</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">edge_decisions</span><span class="p">)</span> <span class="p">)]</span>
+    
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finding connected components in node graph...&quot;</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span> <span class="nb">list</span><span class="p">(</span><span class="n">inactive_edge_ids</span><span class="p">)</span> <span class="p">)</span> 
+        
+        <span class="c1"># If any supervoxels are completely independent (not merged with any neighbors),</span>
+        <span class="c1"># they haven&#39;t been added to the graph yet.</span>
+        <span class="c1"># Add them now.</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sp_ids</span><span class="p">)</span>
+        
+        <span class="n">sp_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sp_ids</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">connected_components</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">sp_id</span> <span class="ow">in</span> <span class="n">sp_ids</span><span class="p">:</span>
+                <span class="n">sp_mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">sp_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">del</span> <span class="n">g</span>
+    
+        <span class="k">return</span> <span class="n">vigra</span><span class="o">.</span><span class="n">analysis</span><span class="o">.</span><span class="n">applyMapping</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="p">,</span> <span class="n">sp_mapping</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Rag.serialize_hdf5"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.serialize_hdf5">[docs]</a>    <span class="k">def</span> <span class="nf">serialize_hdf5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5py_group</span><span class="p">,</span> <span class="n">store_labels</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;lzf&#39;</span><span class="p">,</span> <span class="n">compression_opts</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Serialize the Rag to the given hdf5 group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        h5py_group</span>
+<span class="sd">            *h5py.Group*                                                       |br|</span>
+<span class="sd">            Where to store the data. Should not hold any other data.</span>
+<span class="sd">            </span>
+<span class="sd">        store_labels</span>
+<span class="sd">            If True, the labels will be stored as a (compressed) h5py Dataset. |br|</span>
+<span class="sd">            If False, the labels are *not* stored, but you are responsible     |br|</span>
+<span class="sd">            for loading them separately when calling dataframe_to_hdf5(),      |br|</span>
+<span class="sd">            unless you don&#39;t plan to use superpixel features.</span>
+<span class="sd">        </span>
+<span class="sd">        compression</span>
+<span class="sd">            Passed directly to ``h5py.Group.create_dataset``.</span>
+<span class="sd">        </span>
+<span class="sd">        compression_opts</span>
+<span class="sd">            Passed directly to ``h5py.Group.create_dataset``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Flag: flat_superpixels</span>
+        <span class="n">h5py_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;flat_superpixels&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flat_superpixels</span><span class="p">)</span>
+        
+        <span class="c1"># Dense DFs</span>
+        <span class="n">dense_tables_parent_group</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;dense_edge_tables&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">axiskey</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">df_group</span> <span class="o">=</span> <span class="n">dense_tables_parent_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axiskey</span><span class="p">))</span>
+            <span class="n">dataframe_to_hdf5</span><span class="p">(</span><span class="n">df_group</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># Unique DFs</span>
+        <span class="n">unique_tables_parent_group</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;unique_edge_tables&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">axiskey</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">df_group</span> <span class="o">=</span> <span class="n">unique_tables_parent_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axiskey</span><span class="p">))</span>
+            <span class="n">dataframe_to_hdf5</span><span class="p">(</span><span class="n">df_group</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+
+        <span class="c1"># label_img metadata</span>
+        <span class="n">labels_dset</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;label_img&#39;</span><span class="p">,</span>
+                                                <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                                <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                                                <span class="n">compression</span><span class="o">=</span><span class="n">compression</span><span class="p">,</span>
+                                                <span class="n">compression_opts</span><span class="o">=</span><span class="n">compression_opts</span><span class="p">)</span>
+        <span class="n">labels_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;axistags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">toJSON</span><span class="p">()</span>
+        <span class="n">labels_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;valid_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c1"># label_img contents</span>
+        <span class="k">if</span> <span class="n">store_labels</span><span class="p">:</span>
+            <span class="c1"># Copy and compress.</span>
+            <span class="n">labels_dset</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label_img</span>
+            <span class="n">labels_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;valid_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c1"># Z edge-label image</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_superpixels</span><span class="p">:</span>
+            <span class="n">flat_edge_labels_dset</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s1">&#39;flat_edge_labels&#39;</span><span class="p">,</span>
+                                                              <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_flat_edge_label_img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                                              <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_flat_edge_label_img</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                                                              <span class="n">compression</span><span class="o">=</span><span class="n">compression</span><span class="p">,</span>
+                                                              <span class="n">compression_opts</span><span class="o">=</span><span class="n">compression_opts</span><span class="p">,</span>
+                                                              <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flat_edge_label_img</span><span class="p">)</span>
+            <span class="n">flat_edge_labels_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;axistags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flat_edge_label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">toJSON</span><span class="p">()</span></div>
+
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Rag.deserialize_hdf5"><a class="viewcode-back" href="../../rag.html#ilastikrag.rag.Rag.deserialize_hdf5">[docs]</a>    <span class="k">def</span> <span class="nf">deserialize_hdf5</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">h5py_group</span><span class="p">,</span> <span class="n">label_img</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deserialize the Rag from the given ``h5py.Group``,</span>
+<span class="sd">        which was written via ``Rag.serialize_to_hdf5()``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        label_img</span>
+<span class="sd">            If not ``None``, don&#39;t load labels from hdf5, use this volume instead.</span>
+<span class="sd">            Useful for when ``serialize_hdf5()`` was called with ``store_labels=False``. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rag</span> <span class="o">=</span> <span class="n">Rag</span><span class="p">(</span><span class="s1">&#39;__will_deserialize__&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Flag: flat_superpixels</span>
+        <span class="n">rag</span><span class="o">.</span><span class="n">_flat_superpixels</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;flat_superpixels&#39;</span><span class="p">][()]</span>
+        
+        <span class="c1"># Dense Edge DFs</span>
+        <span class="n">rag</span><span class="o">.</span><span class="n">_dense_edge_tables</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">dense_tables_parent_group</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;dense_edge_tables&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">axiskey</span><span class="p">,</span> <span class="n">df_group</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dense_tables_parent_group</span><span class="o">.</span><span class="n">items</span><span class="p">())[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="c1"># tables should be restored to zyx order.</span>
+            <span class="n">rag</span><span class="o">.</span><span class="n">_dense_edge_tables</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataframe_from_hdf5</span><span class="p">(</span><span class="n">df_group</span><span class="p">)</span>
+
+        <span class="c1"># Dense Edge DFs</span>
+        <span class="n">rag</span><span class="o">.</span><span class="n">_unique_edge_tables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">unique_tables_parent_group</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;unique_edge_tables&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">axiskey</span><span class="p">,</span> <span class="n">df_group</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">unique_tables_parent_group</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">rag</span><span class="o">.</span><span class="n">_unique_edge_tables</span><span class="p">[</span><span class="n">axiskey</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataframe_from_hdf5</span><span class="p">(</span><span class="n">df_group</span><span class="p">)</span>
+        
+        <span class="c1"># label_img</span>
+        <span class="n">label_dset</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;label_img&#39;</span><span class="p">]</span>
+        <span class="n">axistags</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">AxisTags</span><span class="o">.</span><span class="n">fromJSON</span><span class="p">(</span><span class="n">label_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;axistags&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">label_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;valid_data&#39;</span><span class="p">]:</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="n">label_img</span><span class="p">,</span> \
+                <span class="s2">&quot;The labels were already stored to hdf5. Why are you also providing them externally?&quot;</span>
+            <span class="n">label_img</span> <span class="o">=</span> <span class="n">label_dset</span><span class="p">[:]</span>
+            <span class="n">rag</span><span class="o">.</span><span class="n">_label_img</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span> <span class="n">label_img</span><span class="p">,</span> <span class="n">axistags</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">label_img</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="s1">&#39;axistags&#39;</span><span class="p">),</span> \
+                <span class="s2">&quot;For optimal performance, make sure label_img is a VigraArray with accurate axistags&quot;</span>
+            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="s1">&#39;zyx&#39;</span><span class="p">),</span> \
+                <span class="s2">&quot;Only axes z,y,x are permitted, not {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">label_img</span><span class="o">.</span><span class="n">axistags</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">)</span>
+            <span class="n">rag</span><span class="o">.</span><span class="n">_label_img</span> <span class="o">=</span> <span class="n">label_img</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rag</span><span class="o">.</span><span class="n">_label_img</span> <span class="o">=</span> <span class="n">Rag</span><span class="o">.</span><span class="n">_EmptyLabels</span><span class="p">(</span><span class="n">label_dset</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">label_dset</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">axistags</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rag</span><span class="o">.</span><span class="n">_flat_superpixels</span><span class="p">:</span>
+            <span class="n">flat_edge_labels_dset</span> <span class="o">=</span> <span class="n">h5py_group</span><span class="p">[</span><span class="s1">&#39;flat_edge_labels&#39;</span><span class="p">]</span>
+            <span class="n">flat_edge_labels</span> <span class="o">=</span> <span class="n">flat_edge_labels_dset</span><span class="p">[:]</span>
+            <span class="n">axistags</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">AxisTags</span><span class="o">.</span><span class="n">fromJSON</span><span class="p">(</span><span class="n">flat_edge_labels_dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;axistags&#39;</span><span class="p">])</span>
+            <span class="n">rag</span><span class="o">.</span><span class="n">_flat_edge_label_img</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span> <span class="n">flat_edge_labels</span><span class="p">,</span> <span class="n">axistags</span> <span class="p">)</span>
+
+        <span class="c1"># Other attributes</span>
+        <span class="n">rag</span><span class="o">.</span><span class="n">_init_edge_ids</span><span class="p">()</span>
+        <span class="n">rag</span><span class="o">.</span><span class="n">_init_sp_attributes</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">rag</span></div>
+
+    <span class="k">class</span> <span class="nc">_EmptyLabels</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A little stand-in object for a missing labels array, in case the user</span>
+<span class="sd">        wants to deserialize the Rag without a copy of the original labels.</span>
+<span class="sd">        All functions in Rag can work with this object, except for</span>
+<span class="sd">        SP computation, which needs the original label image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">axistags</span><span class="p">):</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;axistags&#39;</span><span class="p">,</span> <span class="n">axistags</span><span class="p">)</span>
+            <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;ndim&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">_raise_NotImplemented</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Labels were not deserialized from hdf5.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Accessing any function or attr other than those defined in __init__ will fail.</span>
+        <span class="n">__add__</span> <span class="o">=</span> <span class="n">__radd__</span> <span class="o">=</span> <span class="n">__mul__</span> <span class="o">=</span> <span class="n">__rmul__</span> <span class="o">=</span> <span class="n">__div__</span> <span class="o">=</span> <span class="n">__rdiv__</span> <span class="o">=</span> \
+        <span class="n">__truediv__</span> <span class="o">=</span> <span class="n">__rtruediv__</span> <span class="o">=</span> <span class="n">__floordiv__</span> <span class="o">=</span> <span class="n">__rfloordiv__</span> <span class="o">=</span> \
+        <span class="n">__mod__</span> <span class="o">=</span> <span class="n">__rmod__</span> <span class="o">=</span> <span class="n">__pos__</span> <span class="o">=</span> <span class="n">__neg__</span> <span class="o">=</span> <span class="n">__call__</span> <span class="o">=</span> \
+        <span class="n">__getitem__</span> <span class="o">=</span> <span class="n">__lt__</span> <span class="o">=</span> <span class="n">__le__</span> <span class="o">=</span> <span class="n">__gt__</span> <span class="o">=</span> <span class="n">__ge__</span> <span class="o">=</span> \
+        <span class="n">__complex__</span> <span class="o">=</span> <span class="n">__pow__</span> <span class="o">=</span> <span class="n">__rpow__</span> <span class="o">=</span> \
+        <span class="n">__str__</span> <span class="o">=</span> <span class="n">__repr__</span> <span class="o">=</span> <span class="n">__int__</span> <span class="o">=</span> <span class="n">__float__</span> <span class="o">=</span> \
+        <span class="n">__setattr__</span> <span class="o">=</span> \
+            <span class="n">_raise_NotImplemented</span>
+        
+        <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="n">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raise_NotImplemented</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_select_accumulator_for_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Select an accumulator from the given accumulator_set for the given id/type and feature names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">accumulator_set</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="n">accumulator_set</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">acc</span> <span class="ow">in</span> <span class="n">accumulator_set</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;edge&#39;</span><span class="p">,</span> <span class="s1">&#39;sp&#39;</span><span class="p">,</span> <span class="s1">&#39;flatedge&#39;</span><span class="p">),</span> \
+                <span class="s2">&quot;{} has unknown accumulator-type: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">acc</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span> <span class="p">)</span>
+            <span class="k">assert</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> \
+                <span class="s2">&quot;{} has empty accumulator-id: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">acc</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span> <span class="p">)</span>
+            <span class="k">assert</span> <span class="s1">&#39;_&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> \
+                <span class="s2">&quot;{} has a bad char in its accumulator-id: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">acc</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span> <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span> <span class="o">==</span> <span class="n">acc_id</span> <span class="ow">and</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span> <span class="o">==</span> <span class="n">acc_type</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">acc</span>
+
+        <span class="c1"># Try default</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_default_accumulator</span><span class="p">(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_create_default_accumulator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Select the default accumulator class with the given id/type, and construct</span>
+<span class="sd">        a new instance with the given feature names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">acc_class</span> <span class="o">=</span> <span class="n">Rag</span><span class="o">.</span><span class="n">DEFAULT_ACCUMULATOR_CLASSES</span><span class="p">[(</span><span class="n">acc_id</span><span class="p">,</span> <span class="n">acc_type</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No known accumulator class for features: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">feature_group_names</span> <span class="p">))</span>
+        <span class="k">return</span> <span class="n">acc_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_group_names</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_check_accumulator_conflicts</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">accumulator_set</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the given accumulator set for possible conflicts,</span>
+<span class="sd">        i.e. if two of them have matching types/ids, then we can&#39;t choose between them.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">accumulator_set</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">acc</span> <span class="ow">in</span> <span class="n">accumulator_set</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">BaseEdgeAccumulator</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">BaseSpAccumulator</span><span class="p">),</span> \
+                <span class="s2">&quot;All accumulators must inherit from an accumulator base class.</span><span class="se">\n</span><span class="s2">&quot;</span>\
+                <span class="s2">&quot;Wrong type: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">acc</span> <span class="p">)</span>
+            
+            <span class="n">counts</span><span class="p">[(</span><span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">counts</span><span class="p">[(</span><span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span><span class="p">)]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Conflicting accumulator selections.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                   <span class="s2">&quot;Multiple accumulators found to process features of type: {}_{}&quot;</span>
+                                   <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_ID</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">ACCUMULATOR_TYPE</span><span class="p">))</span></div>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">lazyflow.utility</span> <span class="kn">import</span> <span class="n">Timer</span>
+    
+    <span class="kn">import</span> <span class="nn">h5py</span>
+    <span class="c1">#watershed_path = &#39;/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/watershed-256.h5&#39;</span>
+    <span class="c1">#grayscale_path = &#39;/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/256/grayscale-256.h5&#39;</span>
+
+    <span class="n">watershed_path</span> <span class="o">=</span> <span class="s1">&#39;/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/watershed-512.h5&#39;</span>
+    <span class="n">grayscale_path</span> <span class="o">=</span> <span class="s1">&#39;/magnetic/data/flyem/chris-two-stage-ilps/volumes/subvol/512/grayscale-512.h5&#39;</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading watershed...&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">watershed_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">watershed</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;watershed&#39;</span><span class="p">][:]</span>
+    <span class="k">if</span> <span class="n">watershed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">watershed</span> <span class="o">=</span> <span class="n">watershed</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">watershed</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span> <span class="n">watershed</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span> <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading grayscale...&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">grayscale_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">grayscale</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;grayscale&#39;</span><span class="p">][:]</span>
+    <span class="k">if</span> <span class="n">grayscale</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">grayscale</span> <span class="o">=</span> <span class="n">grayscale</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">grayscale</span> <span class="o">=</span> <span class="n">vigra</span><span class="o">.</span><span class="n">taggedView</span><span class="p">(</span> <span class="n">grayscale</span><span class="p">,</span> <span class="s1">&#39;zyx&#39;</span> <span class="p">)</span>
+    <span class="c1"># typical features will be float32, not uint8, so let&#39;s not cheat</span>
+    <span class="n">grayscale</span> <span class="o">=</span> <span class="n">grayscale</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="n">feature_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1">#feature_names = [&#39;edgeregion_edge_regionradii&#39;, ]</span>
+    <span class="n">feature_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;standard_edge_mean&#39;</span><span class="p">,</span> <span class="p">]</span>
+    <span class="c1">#feature_names += [&#39;standard_edge_count&#39;, &#39;standard_edge_sum&#39;, &#39;standard_edge_mean&#39;, &#39;standard_edge_variance&#39;,</span>
+    <span class="c1">#                  &#39;standard_edge_minimum&#39;, &#39;standard_edge_maximum&#39;, &#39;standard_edge_quantiles_25&#39;, &#39;standard_edge_quantiles_50&#39;, &#39;standard_edge_quantiles_75&#39;, &#39;standard_edge_quantiles_100&#39;]</span>
+    <span class="c1">#feature_names += [&#39;standard_sp_count&#39;]</span>
+    <span class="c1">#feature_names += [&#39;standard_sp_count&#39;, &#39;standard_sp_sum&#39;, &#39;standard_sp_mean&#39;, &#39;standard_sp_variance&#39;, &#39;standard_sp_kurtosis&#39;, &#39;standard_sp_skewness&#39;]</span>
+    <span class="c1">#feature_names += [&#39;standard_sp_count&#39;, &#39;standard_sp_variance&#39;, &#39;standard_sp_quantiles_25&#39;, ]</span>
+
+    <span class="k">with</span> <span class="n">Timer</span><span class="p">()</span> <span class="k">as</span> <span class="n">timer</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Creating python Rag...&quot;</span><span class="p">)</span>
+        <span class="n">rag</span> <span class="o">=</span> <span class="n">Rag</span><span class="p">(</span> <span class="n">watershed</span> <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Creating rag ({} superpixels, {} edges) took {} seconds&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">rag</span><span class="o">.</span><span class="n">num_sp</span><span class="p">,</span> <span class="n">rag</span><span class="o">.</span><span class="n">num_edges</span><span class="p">,</span> <span class="n">timer</span><span class="o">.</span><span class="n">seconds</span><span class="p">()</span> <span class="p">))</span>
+    <span class="k">print</span> <span class="s2">&quot;unique edge labels per axis: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;edge_label&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span> <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">rag</span><span class="o">.</span><span class="n">dense_edge_tables</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span> <span class="p">)</span>
+    <span class="k">print</span> <span class="s2">&quot;Total pixel edges: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">rag</span><span class="o">.</span><span class="n">dense_edge_tables</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">Timer</span><span class="p">()</span> <span class="k">as</span> <span class="n">timer</span><span class="p">:</span>
+        <span class="n">edge_features_df</span> <span class="o">=</span> <span class="n">rag</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">grayscale</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">)</span>
+        <span class="c1">#edge_features_df = rag.compute_features(None, [&#39;edgeregion_edge_regionradii&#39;])</span>
+        
+    <span class="k">print</span> <span class="s2">&quot;Computing features with python Rag took: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">timer</span><span class="o">.</span><span class="n">seconds</span><span class="p">()</span> <span class="p">)</span>
+    <span class="c1">#print edge_features_df[0:10]</span>
+    
+    <span class="k">print</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">print</span> <span class="s2">&quot;&quot;</span>
+
+<span class="c1">#     # For comparison with vigra.graphs.vigra.graphs.regionAdjacencyGraph</span>
+<span class="c1">#     import vigra</span>
+<span class="c1">#     with Timer() as timer:</span>
+<span class="c1">#         gridGraph = vigra.graphs.gridGraph(watershed.shape)</span>
+<span class="c1">#         rag = vigra.graphs.regionAdjacencyGraph(gridGraph, watershed)</span>
+<span class="c1">#         #ids = rag.uvIds()</span>
+<span class="c1">#     print &quot;Creating vigra Rag took: {}&quot;.format( timer.seconds() )</span>
+<span class="c1">#  </span>
+<span class="c1">#     from relabel_consecutive import relabel_consecutive</span>
+<span class="c1">#     watershed = relabel_consecutive(watershed, out=watershed)</span>
+<span class="c1">#     assert watershed.axistags is not None</span>
+<span class="c1">#  </span>
+<span class="c1">#     grayscale_f = grayscale.astype(np.float32, copy=False)</span>
+<span class="c1">#     with Timer() as timer:</span>
+<span class="c1">#         gridGraphEdgeIndicator = vigra.graphs.edgeFeaturesFromImage(gridGraph,grayscale_f)</span>
+<span class="c1">#         p0 = rag.accumulateEdgeFeatures(gridGraphEdgeIndicator)/255.0</span>
+<span class="c1">#     print &quot;Computing 1 vigra feature took: {}&quot;.format( timer.seconds() )</span>
+ 
+
+<span class="c1">#     # For comparison with scikit-image Rag performance. (It&#39;s bad.)</span>
+<span class="c1">#     from skimage.future.graph import RAG</span>
+<span class="c1">#     with Timer() as timer:</span>
+<span class="c1">#         logger.info(&quot;Creating skimage Rag...&quot;)</span>
+<span class="c1">#         rag = RAG( watershed )</span>
+<span class="c1">#     logger.info(&quot;Creating skimage rag took {} seconds&quot;.format( timer.seconds() ))</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

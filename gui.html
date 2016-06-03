@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Gui Extras &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="index.html"/>
+        <link rel="prev" title="util" href="util.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">util</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Gui Extras</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#feature-selection-widget">Feature Selection Widget</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Gui Extras</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/gui.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="gui-extras">
+<span id="gui"></span><h1>Gui Extras<a class="headerlink" href="#gui-extras" title="Permalink to this headline">¶</a></h1>
+<p>Optional gui utilities.  Requires <code class="docutils literal"><span class="pre">pyqt4</span></code>.</p>
+<div class="section" id="feature-selection-widget">
+<h2>Feature Selection Widget<a class="headerlink" href="#feature-selection-widget" title="Permalink to this headline">¶</a></h2>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/feature-selection.png"><img alt="Feature Selection Dialog" src="_images/feature-selection.png" style="width: 542.0px; height: 498.0px;" /></a>
+</div>
+<dl class="class">
+<dt id="ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog">
+<em class="property">class </em><code class="descclassname">ilastikrag.gui.feature_selection_dialog.</code><code class="descname">FeatureSelectionDialog</code><span class="sig-paren">(</span><em>channel_names</em>, <em>feature_names</em>, <em>default_selections=None</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/gui/feature_selection_dialog.html#FeatureSelectionDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>A UI for selecting edge features on a per-channel basis.</p>
+<p>Example usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">channel_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Grayscale&#39;</span><span class="p">,</span> <span class="s1">&#39;Membranes&#39;</span><span class="p">]</span>
+<span class="n">feature_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;standard_edge_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_count&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_sp_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_sp_count&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;standard_edge_quantiles&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_quantiles_10&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_quantiles_90&#39;</span><span class="p">]</span>
+
+<span class="n">default_selections</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;Grayscale&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;standard_sp_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_sp_count&#39;</span><span class="p">],</span>
+                       <span class="s1">&#39;Membranes&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;standard_edge_quantiles&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+<span class="n">dlg</span> <span class="o">=</span> <span class="n">FeatureSelectionDialog</span><span class="p">(</span><span class="n">channel_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">default_selections</span><span class="p">)</span>
+<span class="n">dlg</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span> <span class="o">==</span> <span class="n">QDialog</span><span class="o">.</span><span class="n">Accepted</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">dlg</span><span class="o">.</span><span class="n">selections</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>channel_names</em>, <em>feature_names</em>, <em>default_selections=None</em>, <em>parent=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/gui/feature_selection_dialog.html#FeatureSelectionDialog.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>channel_names</strong> &#8211; <em>list of str</em>
+The user will be shown a separate checklist of feature options for each channel.</li>
+<li><strong>feature_names</strong> &#8211; <em>list of str</em>
+Feature names, exactly as expected by <a class="reference internal" href="rag.html#ilastikrag.rag.Rag.compute_features" title="ilastikrag.rag.Rag.compute_features"><code class="xref py py-meth docutils literal"><span class="pre">compute_features()</span></code></a>.
+The features will be grouped by category and shown in duplicate checklist widgets for each channel.</li>
+<li><strong>default_selections</strong> &#8211; <em>dict, str: list-of-str</em>
+Mapping from channel_name -&gt; feature_names, indicating which
+features should be selected by default for each channel.</li>
+<li><strong>parent</strong> &#8211; <em>QWidget</em></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog.selections">
+<code class="descname">selections</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/gui/feature_selection_dialog.html#FeatureSelectionDialog.selections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog.selections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the user&#8217;s choices as a dictionary (channel -&gt; feature names).
+Call this after the dialog has been accepted.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="util.html" class="btn btn-neutral" title="util" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

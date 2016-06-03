@@ -1,0 +1,288 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.accumulators.similarity.similarity_flatedge_accumulator &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../../../index.html"/>
+        <link rel="up" title="Module code" href="../../../index.html"/> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.accumulators.similarity.similarity_flatedge_accumulator</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.accumulators.similarity.similarity_flatedge_accumulator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">ilastikrag.util</span> <span class="kn">import</span> <span class="n">edge_ids_for_axis</span>
+<span class="kn">from</span> <span class="nn">ilastikrag.accumulators</span> <span class="kn">import</span> <span class="n">BaseFlatEdgeAccumulator</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SimilarityFlatEdgeAccumulator"><a class="viewcode-back" href="../../../../accumulators.html#ilastikrag.accumulators.similarity.SimilarityFlatEdgeAccumulator">[docs]</a><span class="k">class</span> <span class="nc">SimilarityFlatEdgeAccumulator</span><span class="p">(</span><span class="n">BaseFlatEdgeAccumulator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Accumulator for computing various similarity metrics between pixel values adjacent to &#39;flat edges&#39;,</span>
+<span class="sd">    i.e. the edges in the Z-direction when ``Rag.flat_superpixels == True``.</span>
+<span class="sd">    </span>
+<span class="sd">    Supported feature names:</span>
+<span class="sd">        </span>
+<span class="sd">        - similarity_flatedge_correlation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ACCUMULATOR_ID</span> <span class="o">=</span> <span class="s1">&#39;similarity&#39;</span>
+    <span class="n">ACCUMULATOR_TYPE</span> <span class="o">=</span> <span class="s1">&#39;flatedge&#39;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span> <span class="c1"># Initialize members</span>
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature_names</span> <span class="o">=</span> <span class="n">feature_names</span>
+    
+    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">ingest_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">value_img</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rag</span><span class="o">.</span><span class="n">unique_edge_tables</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">][[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">]])</span>
+         
+        <span class="k">if</span> <span class="s1">&#39;similarity_flatedge_correlation&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feature_names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_correlation_feature</span><span class="p">(</span><span class="n">rag</span><span class="p">,</span> <span class="n">value_img</span><span class="p">)</span>
+            <span class="k">pass</span>
+        
+    <span class="k">def</span> <span class="nf">append_edge_features_to_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_df</span><span class="p">):</span>
+        <span class="n">merged</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">edge_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">merged</span>
+
+    <span class="k">def</span> <span class="nf">_compute_correlation_feature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rag</span><span class="p">,</span> <span class="n">value_img</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the correlation between edge-adjacent pixels and append it to final_df</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># FIXME: We should be able to avoid this sort until the end...</span>
+        <span class="n">z_edge_ids</span> <span class="o">=</span> <span class="n">edge_ids_for_axis</span><span class="p">(</span><span class="n">rag</span><span class="o">.</span><span class="n">label_img</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">z_edge_ids</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="n">values_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">z_edge_ids</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">])</span>
+        <span class="n">values_df</span><span class="p">[</span><span class="s1">&#39;left_values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_img</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">values_df</span><span class="p">[</span><span class="s1">&#39;right_values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_img</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="n">correlations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="p">)</span>
+        
+        <span class="n">group_index</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">def</span> <span class="nf">write_correlation</span><span class="p">(</span><span class="n">group_df</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Computes the correlation between &#39;left_values&#39; and &#39;right_values&#39; of the given group,</span>
+<span class="sd">            and writes it into the pre-existing correlations_array.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="c1"># There&#39;s one &#39;gotcha&#39; to watch out for here:</span>
+            <span class="c1"># GroupBy.apply() calls this function *twice* for the first group.</span>
+            <span class="c1"># http://pandas.pydata.org/pandas-docs/stable/generated/pandas.core.groupby.GroupBy.apply.html</span>
+            <span class="k">if</span> <span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="bp">None</span>
+
+            <span class="c1"># Compute</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">group_df</span><span class="p">[</span><span class="s1">&#39;left_values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">group_df</span><span class="p">[</span><span class="s1">&#39;right_values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">denominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">covariance</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">denominator</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">corr</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">covariance</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">corr</span> <span class="o">=</span> <span class="p">(</span><span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">)</span>
+            
+            <span class="c1"># Store</span>
+            <span class="n">correlations</span><span class="p">[</span><span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">corr</span>
+            <span class="n">group_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="c1"># We don&#39;t need to return anything;</span>
+            <span class="c1"># we&#39;re using this function only for its side effects.</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="n">grouper</span> <span class="o">=</span> <span class="n">values_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;sp1&#39;</span><span class="p">,</span> <span class="s1">&#39;sp2&#39;</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">grouper</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">write_correlation</span><span class="p">)</span> <span class="c1"># Used for its side-effects only</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span><span class="p">[</span><span class="s1">&#39;similarity_flatedge_correlation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">correlations</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_final_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">supported_features</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">rag</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rag</span><span class="o">.</span><span class="n">flat_superpixels</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;similarity_flatedge_correlation&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">names</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

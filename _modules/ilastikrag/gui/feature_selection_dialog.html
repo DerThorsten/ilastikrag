@@ -1,0 +1,400 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ilastikrag.gui.feature_selection_dialog &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../util.html">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../../index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>ilastikrag.gui.feature_selection_dialog</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ilastikrag.gui.feature_selection_dialog</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
+
+<span class="kn">from</span> <span class="nn">PyQt4.QtCore</span> <span class="kn">import</span> <span class="n">Qt</span>
+<span class="kn">from</span> <span class="nn">PyQt4.QtGui</span> <span class="kn">import</span> <span class="n">QDialog</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QDialogButtonBox</span>
+
+<span class="kn">from</span> <span class="nn">util</span> <span class="kn">import</span> <span class="n">HierarchicalChecklistView</span><span class="p">,</span> <span class="n">Checklist</span>
+
+<span class="c1"># FIXME: These imports will be needed if we ever figure out how to manage the sizes properly...</span>
+<span class="c1">#from PyQt4.QtCore import QSize</span>
+<span class="c1">#from PyQt4.QtGui import QSizePolicy, QScrollArea</span>
+
+<div class="viewcode-block" id="FeatureSelectionDialog"><a class="viewcode-back" href="../../../gui.html#ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog">[docs]</a><span class="k">class</span> <span class="nc">FeatureSelectionDialog</span><span class="p">(</span><span class="n">QDialog</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A UI for selecting edge features on a per-channel basis.</span>
+<span class="sd">    </span>
+<span class="sd">    Example usage:</span>
+<span class="sd">    </span>
+<span class="sd">    .. code-block:: python</span>
+<span class="sd">    </span>
+<span class="sd">        channel_names = [&#39;Grayscale&#39;, &#39;Membranes&#39;]</span>
+<span class="sd">        feature_names = [&#39;standard_edge_mean&#39;, &#39;standard_edge_count&#39;,</span>
+<span class="sd">                         &#39;standard_sp_mean&#39;, &#39;standard_sp_count&#39;,</span>
+<span class="sd">                         &#39;standard_edge_quantiles&#39;, &#39;standard_edge_quantiles_10&#39;, &#39;standard_edge_quantiles_90&#39;]</span>
+
+<span class="sd">        default_selections = { &#39;Grayscale&#39;: [&#39;standard_sp_mean&#39;, &#39;standard_sp_count&#39;],</span>
+<span class="sd">                               &#39;Membranes&#39;: [&#39;standard_edge_quantiles&#39;] }</span>
+
+<span class="sd">        dlg = FeatureSelectionDialog(channel_names, feature_names, default_selections)</span>
+<span class="sd">        dlg.exec_()</span>
+<span class="sd">        if dlg.exec_() == QDialog.Accepted:</span>
+<span class="sd">            print dlg.selections()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FeatureSelectionDialog.__init__"><a class="viewcode-back" href="../../../gui.html#ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">default_selections</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        channel_names</span>
+<span class="sd">            *list of str*</span>
+<span class="sd">            The user will be shown a separate checklist of feature options for each channel.</span>
+<span class="sd">        </span>
+<span class="sd">        feature_names</span>
+<span class="sd">            *list of str*</span>
+<span class="sd">            Feature names, exactly as expected by :py:meth:`~ilastikrag.rag.Rag.compute_features()`.</span>
+<span class="sd">            The features will be grouped by category and shown in duplicate checklist widgets for each channel.</span>
+<span class="sd">        </span>
+<span class="sd">        default_selections</span>
+<span class="sd">            *dict, str: list-of-str*</span>
+<span class="sd">            Mapping from channel_name -&gt; feature_names, indicating which</span>
+<span class="sd">            features should be selected by default for each channel.</span>
+<span class="sd">        </span>
+<span class="sd">        parent</span>
+<span class="sd">            *QWidget*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FeatureSelectionDialog</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Select Edge Features&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tree_widgets</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">checklist_widgets</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">boxes_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">channel_name</span> <span class="ow">in</span> <span class="n">channel_names</span><span class="p">:</span>
+            <span class="n">default_checked</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">default_selections</span> <span class="ow">and</span> <span class="n">channel_name</span> <span class="ow">in</span> <span class="n">default_selections</span><span class="p">:</span>
+                <span class="n">default_checked</span> <span class="o">=</span> <span class="n">default_selections</span><span class="p">[</span><span class="n">channel_name</span><span class="p">]</span>
+            <span class="n">checklist</span> <span class="o">=</span> <span class="n">_make_checklist</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">default_checked</span><span class="p">)</span>
+            <span class="n">checklist</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">channel_name</span>
+            <span class="n">checklist_widget</span> <span class="o">=</span> <span class="n">HierarchicalChecklistView</span><span class="p">(</span> <span class="n">checklist</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checklist_widgets</span><span class="p">[</span><span class="n">channel_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">checklist_widget</span>
+            <span class="n">boxes_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">checklist_widget</span><span class="p">)</span>
+
+        <span class="n">buttonbox</span> <span class="o">=</span> <span class="n">QDialogButtonBox</span><span class="p">(</span> <span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span> <span class="p">)</span>
+        <span class="n">buttonbox</span><span class="o">.</span><span class="n">setStandardButtons</span><span class="p">(</span> <span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">Ok</span> <span class="o">|</span> <span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">Cancel</span> <span class="p">)</span>
+        <span class="n">buttonbox</span><span class="o">.</span><span class="n">accepted</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">accept</span> <span class="p">)</span>
+        <span class="n">buttonbox</span><span class="o">.</span><span class="n">rejected</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">reject</span> <span class="p">)</span>
+
+        <span class="n">widget_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+
+        <span class="c1"># FIXME: Would like to hold the TreeWidgets in a QScrollArea,</span>
+        <span class="c1">#        but they don&#39;t seem to respect fixed size policies,</span>
+        <span class="c1">#        so the scroll area never shows a scrollbar...</span>
+        <span class="c1">#scrollarea = QScrollArea()</span>
+        <span class="c1">#scrollarea.setLayout(boxes_layout)</span>
+        <span class="c1">#widget_layout.addWidget(scrollarea)</span>
+        <span class="n">widget_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">boxes_layout</span><span class="p">)</span>
+
+        <span class="n">widget_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">buttonbox</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">widget_layout</span><span class="p">)</span>
+
+        <span class="n">total_spacing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channel_names</span><span class="p">)</span><span class="o">*</span><span class="n">checklist_widget</span><span class="o">.</span><span class="n">width</span><span class="p">())</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="n">total_spacing</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel_names</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span> <span class="mi">20</span> <span class="o">+</span> <span class="n">checklist_widget</span><span class="o">.</span><span class="n">columnWidth</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">total_width</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FeatureSelectionDialog.selections"><a class="viewcode-back" href="../../../gui.html#ilastikrag.gui.feature_selection_dialog.FeatureSelectionDialog.selections">[docs]</a>    <span class="k">def</span> <span class="nf">selections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the user&#39;s choices as a dictionary (channel -&gt; feature names).</span>
+<span class="sd">        Call this after the dialog has been accepted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selections</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">channel_name</span><span class="p">,</span> <span class="n">checklist_widget</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">checklist_widgets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">channel_selections</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">nested_selections</span> <span class="o">=</span> <span class="n">checklist_widget</span><span class="o">.</span><span class="n">checklist</span><span class="o">.</span><span class="n">to_nested_dict</span><span class="p">(</span><span class="n">filter_by_checkstate</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_category_name</span><span class="p">,</span> <span class="n">category_dict</span> <span class="ow">in</span> <span class="n">nested_selections</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">_subgroup_name</span><span class="p">,</span> <span class="n">subgroup_items</span> <span class="ow">in</span> <span class="n">category_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">_short_name</span><span class="p">,</span> <span class="p">(</span><span class="n">checkstate</span><span class="p">,</span> <span class="n">feature_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">subgroup_items</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">assert</span> <span class="n">checkstate</span> <span class="ow">is</span> <span class="bp">True</span>
+                        <span class="n">channel_selections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">feature_name</span> <span class="p">)</span>
+            <span class="n">selections</span><span class="p">[</span><span class="n">channel_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">channel_selections</span>
+        <span class="k">return</span> <span class="n">selections</span></div>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">launch</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">channel_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">default_selections</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">PyQt4.QtGui</span> <span class="kn">import</span> <span class="n">QApplication</span>
+        <span class="k">if</span> <span class="n">QApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">([])</span>
+        
+        <span class="n">dlg</span> <span class="o">=</span> <span class="n">FeatureSelectionDialog</span><span class="p">(</span><span class="n">channel_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">default_selections</span><span class="p">)</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">raise_</span><span class="p">()</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">result</span><span class="p">()</span> <span class="o">==</span> <span class="n">QDialog</span><span class="o">.</span><span class="n">Accepted</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">selections</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">None</span></div>
+
+<span class="k">def</span> <span class="nf">_make_checklist</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">default_checked</span><span class="p">):</span>
+    <span class="n">feature_groups</span> <span class="o">=</span> <span class="n">_group_features</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span>
+
+    <span class="n">cat_checklists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">category</span><span class="p">,</span> <span class="n">category_group</span> <span class="ow">in</span> <span class="n">feature_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">subgroup_checklists</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">subgroup_name</span><span class="p">,</span> <span class="n">subgroup</span> <span class="ow">in</span> <span class="n">category_group</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">feature_checklist_items</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">feature_name</span> <span class="ow">in</span> <span class="n">subgroup</span><span class="p">:</span>
+                <span class="c1"># Instead of looking for an exact match, </span>
+                <span class="c1"># we use &#39;any&#39; here to auto-check all quantiles if the user</span>
+                <span class="c1"># just gave e.g. &#39;standard_sp_quantiles&#39;</span>
+                <span class="n">checkstate</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">feature_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">checked</span><span class="p">)</span> <span class="k">for</span> <span class="n">checked</span> <span class="ow">in</span> <span class="n">default_checked</span><span class="p">)</span>
+                <span class="n">feature_checklist_items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">Checklist</span><span class="p">(</span><span class="n">feature_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">checkstate</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">feature_name</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">subgroup_checklists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">Checklist</span><span class="p">(</span><span class="n">subgroup_name</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">Unchecked</span><span class="p">,</span> <span class="n">feature_checklist_items</span><span class="p">,</span> <span class="bp">None</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="n">cat_checklists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">Checklist</span><span class="p">(</span> <span class="n">category</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">Unchecked</span><span class="p">,</span> <span class="n">subgroup_checklists</span><span class="p">,</span> <span class="bp">None</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Checklist</span><span class="p">(</span> <span class="s1">&#39;root&#39;</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">Unchecked</span><span class="p">,</span> <span class="n">cat_checklists</span><span class="p">,</span> <span class="bp">None</span> <span class="p">)</span>
+    
+<span class="k">def</span> <span class="nf">_group_features</span><span class="p">(</span><span class="n">feature_names</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build up a big dict-of-dicts indexed like this:</span>
+<span class="sd">    feature_groups[(category, type)][subgroup] = [subgroup_features...]</span>
+<span class="sd">    </span>
+<span class="sd">    For example:</span>
+<span class="sd">    </span>
+<span class="sd">        feature_groups[&#39;standard (sp)&#39;][&#39;general&#39;]     = [&#39;standard_sp_count&#39;, &#39;standard_sp_mean&#39;, ...]</span>
+<span class="sd">        feature_groups[&#39;standard (sp)&#39;][&#39;regionradii&#39;] = [&#39;standard_sp_regionradii_0&#39;, &#39;standard_sp_regionradii_1&#39;]</span>
+<span class="sd">        feature_groups[&#39;standard (sp)&#39;][&#39;regionaxes&#39;]  = [&#39;standard_sp_regionaxes_0x&#39;, &#39;standard_sp_regionaxes_0y&#39;,</span>
+<span class="sd">                                                          &#39;standard_sp_regionaxes_1x&#39;, &#39;standard_sp_regionaxes_1y&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">feature_groups</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">feature_name_tuples</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">feature_category</span><span class="p">,</span> <span class="n">feature_type</span><span class="p">),</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">feature_name_tuples</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="n">tup</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="p">):</span>
+        <span class="n">subgroups</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">subgroups</span><span class="p">[</span><span class="s1">&#39;general&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">subgroup_name</span><span class="p">,</span> <span class="n">subgroup</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="n">tup</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+            <span class="c1"># We assume the name &#39;general&#39; isn&#39;t part of any feature names,</span>
+            <span class="c1"># so we can use it as a catch-all subgroup for this widget</span>
+            <span class="k">assert</span> <span class="n">subgroup_name</span> <span class="o">!=</span> <span class="s1">&#39;general&#39;</span>
+
+            <span class="n">subgroup_feature_names</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">,</span> <span class="n">subgroup</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subgroup_feature_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">subgroups</span><span class="p">[</span><span class="s1">&#39;general&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">subgroup_feature_names</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Drop the &#39;top-level&#39; feature name, e.g. &#39;standard_edge_quantiles&#39;,</span>
+                <span class="c1"># keeping only the &#39;low-level&#39; names like &#39;standard_edge_quantiles_10&#39;</span>
+                <span class="n">subgroup_feature_names</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span> <span class="k">lambda</span> <span class="n">name</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">4</span><span class="p">,</span> <span class="n">subgroup_feature_names</span> <span class="p">)</span>
+                <span class="n">subgroups</span><span class="p">[</span><span class="n">subgroup_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">subgroup_feature_names</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subgroups</span><span class="p">[</span><span class="s1">&#39;general&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">subgroups</span><span class="p">[</span><span class="s1">&#39;general&#39;</span><span class="p">]</span>
+        <span class="n">feature_groups</span><span class="p">[</span><span class="s2">&quot;{} ({})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">feature_category</span><span class="p">,</span> <span class="n">feature_type</span><span class="p">)]</span> <span class="o">=</span> <span class="n">subgroups</span>
+    <span class="k">return</span> <span class="n">feature_groups</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Make the program quit on Ctrl+C</span>
+    <span class="kn">import</span> <span class="nn">signal</span>
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIG_DFL</span><span class="p">)</span>
+
+    <span class="c1">#channel_names = [&#39;Grayscale&#39;, &#39;Membranes&#39;, &#39;Cytoplasm&#39;, &#39;Mitochondria&#39;]</span>
+    <span class="n">channel_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Grayscale&#39;</span><span class="p">,</span> <span class="s1">&#39;Membranes&#39;</span><span class="p">]</span>
+    <span class="n">feature_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;standard_edge_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_maximum&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_count&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;standard_sp_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_sp_maximum&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_sp_count&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;standard_edge_quantiles&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_quantiles_10&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_edge_quantiles_90&#39;</span><span class="p">]</span>
+
+    <span class="n">default_selections</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;Grayscale&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;standard_sp_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;standard_sp_count&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;Membranes&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;standard_edge_quantiles&#39;</span><span class="p">]</span> <span class="p">}</span>
+
+    <span class="n">selections</span> <span class="o">=</span> <span class="n">FeatureSelectionDialog</span><span class="o">.</span><span class="n">launch</span><span class="p">(</span><span class="n">channel_names</span><span class="p">,</span> <span class="n">feature_names</span><span class="p">,</span> <span class="n">default_selections</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">selections</span>
+
+<span class="c1">#     from PyQt4.QtGui import QApplication</span>
+<span class="c1">#     app = QApplication([])</span>
+<span class="c1"># </span>
+<span class="c1"># </span>
+<span class="c1">#     dlg = FeatureSelectionDialog(</span>
+<span class="c1">#     dlg.show()</span>
+<span class="c1">#     dlg.raise_()</span>
+<span class="c1">#     dlg.exec_()</span>
+<span class="c1"># </span>
+<span class="c1">#     print dlg.selections()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

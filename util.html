@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>util &mdash; ilastikrag 0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="ilastikrag 0.1 documentation" href="index.html"/>
+        <link rel="next" title="Gui Extras" href="gui.html"/>
+        <link rel="prev" title="Feature Accumulators" href="accumulators.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ilastikrag
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="rag.html">Rag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="accumulators.html">Feature Accumulators</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Gui Extras</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">ilastikrag</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>util</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/util.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-ilastikrag.util">
+<span id="util"></span><h1>util<a class="headerlink" href="#module-ilastikrag.util" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="ilastikrag.util.contingency_table">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">contingency_table</code><span class="sig-paren">(</span><em>vol1</em>, <em>vol2</em>, <em>maxlabels=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#contingency_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.contingency_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a 2D array &#8216;table&#8217; such that <code class="docutils literal"><span class="pre">table[i,j]</span></code> represents
+the count of overlapping pixels with value <code class="docutils literal"><span class="pre">i</span></code> in <code class="docutils literal"><span class="pre">vol1</span></code>
+and value <code class="docutils literal"><span class="pre">j</span></code> in <code class="docutils literal"><span class="pre">vol2</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.dataframe_from_hdf5">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">dataframe_from_hdf5</code><span class="sig-paren">(</span><em>h5py_group</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#dataframe_from_hdf5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.dataframe_from_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to deserialize a pandas.DataFrame from an h5py.Group,
+as written by <code class="docutils literal"><span class="pre">dataframe_to_hdf5()</span></code>.</p>
+<dl class="docutils">
+<dt>Note: This function uses a custom storage format,</dt>
+<dd>not the same format as pandas.read_hdf().</dd>
+</dl>
+<p>Known to work for the DataFrames used in the Rag datastructure,
+including the MultiIndex columns in the dense_edge_tables.
+Not tested with more complicated DataFrame structures.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.dataframe_to_hdf5">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">dataframe_to_hdf5</code><span class="sig-paren">(</span><em>h5py_group</em>, <em>df</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#dataframe_to_hdf5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.dataframe_to_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to serialize a pandas.DataFrame to an h5py.Group.</p>
+<dl class="docutils">
+<dt>Note: This function uses a custom storage format,</dt>
+<dd>not the same format as pandas.DataFrame.to_hdf().</dd>
+</dl>
+<p>Known to work for the DataFrames used in the Rag datastructure,
+including the MultiIndex columns in the dense_edge_tables.
+Not tested with more complicated DataFrame structures.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.edge_ids_for_axis">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">edge_ids_for_axis</code><span class="sig-paren">(</span><em>label_img</em>, <em>edge_mask</em>, <em>axis</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#edge_ids_for_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.edge_ids_for_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a &#8216;left-hand&#8217; edge_mask indicating where edges are located along the given axis,
+return an array of of edge ids (u,v) corresonding to the voxel ids of every voxel under the mask,
+in the same order as <code class="docutils literal"><span class="pre">edge_mask.nonzero()</span></code>.</p>
+<p>The edge ids returned in scan-order (i.e. like <code class="docutils literal"><span class="pre">.nonzero()</span></code>), but are <em>not</em> sorted such that u &lt; v.
+Instead, each edge id (u,v) is ordered from &#8216;left&#8217; to &#8216;right&#8217;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>label_img</strong> &#8211; ndarray</li>
+<li><strong>edge_mask</strong> &#8211; <p>A &#8216;left-hand&#8217; mask indicating where the image edges are.
+Should be same shape as label_img, except in the dimension of the given axis,
+where it is 1 pixel narrower.</p>
+<p>You may also provide edge_mask=None, which implies that <em>all</em> pixel locations
+contain an edge along the requested axis.
+(Useful if you&#8217;re dealing with flat superpixels.)</p>
+</li>
+<li><strong>axis</strong> &#8211; An int, &lt; label_img.ndim
+Indicates the axis along which edges will be extracted.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><code class="docutils literal"><span class="pre">ndarray</span></code> of <code class="docutils literal"><span class="pre">edge_ids</span></code>, <code class="docutils literal"><span class="pre">shape=(N,2)</span></code></li>
+<li>To sort each pair, call <code class="docutils literal"><span class="pre">edge_ids.sort(axis=1)</span></code></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.edge_mask_for_axis">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">edge_mask_for_axis</code><span class="sig-paren">(</span><em>label_img</em>, <em>axis</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#edge_mask_for_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.edge_mask_for_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all supervoxel edges along the given axis and return
+a &#8216;left-hand&#8217; mask indicating where the edges are located
+(i.e. a boolean array indicating voxels that are just to the left of an edge).
+Note that this mask is less wide (by 1 pixel) than <code class="docutils literal"><span class="pre">label_img</span></code> along the chosen axis.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.extract_edge_values_for_axis">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">extract_edge_values_for_axis</code><span class="sig-paren">(</span><em>axis</em>, <em>edge_mask</em>, <em>value_img</em>, <em>aspandas=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#extract_edge_values_for_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.extract_edge_values_for_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns 1D <code class="docutils literal"><span class="pre">ndarray</span></code>, in the same order as <code class="docutils literal"><span class="pre">edge_mask.nonzero()</span></code>.
+Result is <code class="docutils literal"><span class="pre">float32</span></code>, regardless of <code class="docutils literal"><span class="pre">value_img.dtype</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.generate_random_voronoi">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">generate_random_voronoi</code><span class="sig-paren">(</span><em>shape</em>, <em>num_sp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#generate_random_voronoi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.generate_random_voronoi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a superpixel image for testing.
+A set of N seed points (N=``num_sp``) will be chosen randomly, and the superpixels
+will just be a voronoi diagram for those seeds.
+Note: The first superpixel ID is 1.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.get_edge_ids">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">get_edge_ids</code><span class="sig-paren">(</span><em>label_img</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#get_edge_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.get_edge_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function.
+Returns a DataFrame with columns <code class="docutils literal"><span class="pre">['sp1',</span> <span class="pre">'sp2',</span> <span class="pre">'edge_label']</span></code>, sorted by <code class="docutils literal"><span class="pre">('sp1',</span> <span class="pre">'sp2')</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.label_vol_mapping">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">label_vol_mapping</code><span class="sig-paren">(</span><em>vol_from</em>, <em>vol_to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#label_vol_mapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.label_vol_mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine how remap voxel IDs in <code class="docutils literal"><span class="pre">vol_from</span></code> into corresponding
+IDs in <code class="docutils literal"><span class="pre">vol_to</span></code>, according to maxiumum overlap.
+(Note that this is not a commutative operation.)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li>A 1D index array such that <code class="docutils literal"><span class="pre">mapping[i]</span> <span class="pre">=</span> <span class="pre">j</span></code>, where <code class="docutils literal"><span class="pre">i</span></code></li>
+<li>is a voxel ID in <code class="docutils literal"><span class="pre">vol_from</span></code>, and <code class="docutils literal"><span class="pre">j</span></code> is the corresponding</li>
+<li>ID in <code class="docutils literal"><span class="pre">vol_to</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.nonzero_coord_array">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">nonzero_coord_array</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#nonzero_coord_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.nonzero_coord_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent to <code class="docutils literal"><span class="pre">np.transpose(a.nonzero())</span></code>, but much
+faster for large arrays, thanks to a little trick:</p>
+<p>The elements of the tuple returned by <code class="docutils literal"><span class="pre">a.nonzero()</span></code> share a common <code class="docutils literal"><span class="pre">base</span></code>,
+so we can avoid the copy that would normally be incurred when
+calling <code class="docutils literal"><span class="pre">transpose()</span></code> on the tuple.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ilastikrag.util.unique_edge_labels">
+<code class="descclassname">ilastikrag.util.</code><code class="descname">unique_edge_labels</code><span class="sig-paren">(</span><em>all_edge_ids</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ilastikrag/util.html#unique_edge_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ilastikrag.util.unique_edge_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a <em>list</em> of <code class="docutils literal"><span class="pre">edge_id</span></code> arrays (each of which has shape <code class="docutils literal"><span class="pre">(N,2)</span></code>),
+merge all <code class="docutils literal"><span class="pre">edge_id</span></code> arrays into a single <code class="docutils literal"><span class="pre">pandas.DataFrame</span></code> with
+columns <code class="docutils literal"><span class="pre">['sp1',</span> <span class="pre">'sp2',</span> <span class="pre">and</span> <span class="pre">'edge_label']</span></code>, where <code class="docutils literal"><span class="pre">edge_label</span></code>
+is a unique ID number for each <code class="docutils literal"><span class="pre">edge_id</span></code> pair.
+(The DataFrame will have no duplicate entries.)</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="gui.html" class="btn btn-neutral float-right" title="Gui Extras" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="accumulators.html" class="btn btn-neutral" title="Feature Accumulators" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Stuart Berg.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
